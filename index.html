@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HUD Smart Glasses</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Sfondo NERO ASSOLUTO (#000000): Essenziale affinché il nero diventi completamente trasparente sulle lenti degli smart glasses. */
+        body { 
+            background-color: #000000; 
+            overflow: hidden; 
+            font-family: sans-serif;
+        }
+        /* Nasconde le barre di scorrimento fisiche mantenendo lo scorrimento logico/visivo pulito */
+        ::-webkit-scrollbar { 
+            display: none; 
+        }
+    </style>
+</head>
+<body class="h-screen w-screen flex items-center justify-center bg-black">
+
+    <div id="setup-screen" class="z-50 flex flex-col items-center justify-center p-8 space-y-8 w-full max-w-[500px]">
+        <h1 class="text-4xl font-bold text-white text-center tracking-wide">HUD Setup</h1>
+
+        <div class="w-full">
+            <label class="block text-zinc-400 text-lg mb-2 font-semibold">Seleziona Modalità</label>
+            <select id="mode-select" class="w-full bg-zinc-900 text-white text-xl p-4 rounded-xl border border-zinc-700 outline-none focus:border-amber-500">
+                <option value="live">Sottotitoli Live (Scorrimento continuo)</option>
+                <option value="teams">Modalità Teams (Ultime 3 frasi)</option>
+            </select>
+        </div>
+
+        <button id="start-btn" class="w-full bg-amber-500 text-black text-2xl font-bold py-5 px-8 rounded-xl active:scale-95 transition-transform">
+            Avvia HUD
+        </button>
+        <p class="text-zinc-600 text-sm text-center">L'app richiederà l'accesso al microfono per la trascrizione e impedirà il blocco dello schermo.</p>
+    </div>
+
+    <div id="hud-screen" class="hidden w-[600px] h-[600px] flex flex-col justify-end p-4 relative">
+        
+        <div id="text-container" class="w-full flex flex-col justify-end space-y-5 text-[40px] leading-tight font-extrabold pb-4">
+            </div>
+
+        <div id="status-dot" class="absolute top-4 right-4 w-4 h-4 bg-red-600 rounded-full animate-pulse hidden"></div>
+    </div>
+
+    <script>
+        const setupScreen = document.getElementById('setup-screen');
+        const hudScreen = document.getElementById('hud-screen');
+        const startBtn = document.getElementById('start-btn');
+        const modeSelect = document.getElementById('mode-select');
+        const textContainer = document.getElementById('text-container');
+        const statusDot = document.getElementById('status-dot');
+
+        let wakeLock = null;
+        let currentMode = 'live';
+        let teamsSentences = []; // Buffer per la modalità Teams
+
+        // [INIZIALIZZAZIONE WEB SPEECH API]
+        // Si copre sia l'implementazione standard che quella WebKit (Safari/iOS)
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+        if (!SpeechRecognition) {
+            alert("Il tuo browser non supporta la Web Speech API. Utilizza un browser basato su Chromium o Safari aggiornato.");
+        } else {
+            const recognition = new SpeechRecognition();
+
+            // [PARAMETRI REGOLABILI API VOCALE]
+            // continuous = true : Mantiene il microfono aperto anche quando smetti di parlare (fondamentale per le riunioni).
+            recognition.continuous = true;
+            
+            // interimResults = true : Restituisce le parole mentre le stai ancora pronunciando, offrendo un vero effetto "Live".
+            recognition.interimResults = true;
+            
+            // lang : Imposta la lingua. Cambialo in 'en-US' se hai call internazionali in inglese.
+            recognition.lang = 'it-IT';
+
+            recognition.onstart = () => {
+                statusDot.classList.remove('hidden');
+            };
+
+            recognition.onerror = (event) => {
+                console.error("Errore di riconoscimento:", event.error);
+                statusDot.classList.replace('bg-red-600', 'bg-zinc-800'); // Indicatore di errore visivo silente
+            };
+
+            // Riavvio automatico in caso di interruzione (es. timeout di silenzio del browser)
+            recognition.onend = () => {
+                try {
+                    recognition.start();
+                } catch(e) {}
+            };
+
+            recognition.onresult = (event) => {
+                let interimTranscript = '';
+                let finalTranscript = '';
+
+                // Ciclo per separare le frasi definitive da quelle provvisorie lette in tempo reale
+                for (let i = event.resultIndex; i < event.results.length; ++i) {
+                    if (event.results[i].isFinal) {
+                        finalTranscript += event.results[i][0].transcript;
+                    } else {
+                        interimTranscript += event.results[i][0].transcript;
+                    }
+                }
+
+                aggiornaInterfaccia(finalTranscript, interimTranscript);
+            };
+
+            startBtn.addEventListener('click', async () => {
+                currentMode = modeSelect.value;
+                
+                // Transizione UI
+                setupScreen.classList.add('hidden');
+                hudScreen.classList.remove('hidden');
+
+                // Richiede il Wake Lock e avvia l'ascolto simultaneamente
+                richiediWakeLock();
+
+                try {
+                    recognition.start();
+                } catch (e) {
+                    console.error("Errore avvio microfono", e);
+                }
+            });
+        }
+
+        // Funzione core di rendering per le due modalità visive
+        function aggiornaInterfaccia(finale, provvisorio) {
+            if (currentMode === 'live') {
+                // [MODALITÀ LIVE]
+                if (finale) {
+                    const p = document.createElement('p');
+                    p.className = "text-amber-400 drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"; 
+                    p.textContent = finale;
+                    textContainer.appendChild(p);
+                }
+
+                // Pulizia dei frammenti provvisori precedenti per non sdoppiare il testo
+                const vecchiProvvisori = textContainer.querySelectorAll('.provvisorio');
+                vecchiProvvisori.forEach(el => el.remove());
+
+                if (provvisorio) {
+                    const pProv = document.createElement('p');
+                    // Il testo provvisorio è leggermente più scuro/opaco
+                    pProv.className = "provvisorio text-amber-600 opacity-80 italic";
+                    pProv.textContent = provvisorio;
+                    textContainer.appendChild(pProv);
+                }
+
+                // Garbage Collection del DOM: mantiene solo gli ultimi 8 elementi per non collassare la memoria o spingere il testo fuori dal 600x600
+                while (textContainer.children.length > 8) {
+                    textContainer.removeChild(textContainer.firstChild);
+                }
+
+            } else {
+                // [MODALITÀ TEAMS]
+                if (finale) {
+                    teamsSentences.push(finale);
+                    // Rimuove la frase più vecchia se superiamo le 3 frasi
+                    if (teamsSentences.length > 3) {
+                        teamsSentences.shift();
+                    }
+                }
+
+                // Svuota completamente il container ad ogni refresh
+                textContainer.innerHTML = '';
+
+                // Ricostruisce la vista dall'array buffer
+                teamsSentences.forEach((frase, index) => {
+                    const p = document.createElement('p');
+                    // Gerarchia visiva: l'elemento più vecchio (indice 0) sbiadisce se abbiamo 3 elementi totali
+                    if (index === 0 && teamsSentences.length === 3) {
+                        p.className = "text-amber-500 opacity-50";
+                    } else {
+                        p.className = "text-amber-400 drop-shadow-[0_2px_2px_rgba(0,0,0,1)]";
+                    }
+                    p.textContent = frase;
+                    textContainer.appendChild(p);
+                });
+
+                // Aggiunge la coda provvisoria in coda
+                if (provvisorio) {
+                    const pProv = document.createElement('p');
+                    pProv.className = "text-amber-600 opacity-80 italic";
+                    pProv.textContent = provvisorio;
+                    textContainer.appendChild(pProv);
+                }
+            }
+        }
+
+        // [SCREEN WAKE LOCK API]
+        // Mantiene lo schermo attivo bypassando le impostazioni di timeout del sistema operativo
+        async function richiediWakeLock() {
+            if ('wakeLock' in navigator) {
+                try {
+                    wakeLock = await navigator.wakeLock.request('screen');
+                    wakeLock.addEventListener('release', () => {
+                        console.log('Screen Wake Lock perso (es. cambio tab)');
+                    });
+                } catch (err) {
+                    console.error(`Errore Wake Lock: ${err.name}, ${err.message}`);
+                }
+            }
+        }
+
+        // Riapplica il Wake Lock automaticamente se si torna sulla pagina dopo averla messa in background
+        document.addEventListener('visibilitychange', async () => {
+            if (wakeLock !== null && document.visibilityState === 'visible') {
+                richiediWakeLock();
+            }
+        });
+    </script>
+</body>
+</html>
