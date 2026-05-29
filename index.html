@@ -3,16 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>HUD Smart Glasses</title>
+    <title>HUD Smart Glasses - Pro</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* Sfondo NERO ASSOLUTO (#000000): Essenziale affinché il nero diventi completamente trasparente sulle lenti degli smart glasses. */
         body { 
             background-color: #000000; 
             overflow: hidden; 
             font-family: sans-serif;
         }
-        /* Nasconde le barre di scorrimento fisiche mantenendo lo scorrimento logico/visivo pulito */
         ::-webkit-scrollbar { 
             display: none; 
         }
@@ -23,26 +21,25 @@
     <div id="setup-screen" class="z-50 flex flex-col items-center justify-center p-8 space-y-8 w-full max-w-[500px]">
         <h1 class="text-4xl font-bold text-white text-center tracking-wide">HUD Setup</h1>
 
+        <div id="error-log" class="w-full text-center text-red-500 font-semibold text-lg hidden bg-red-950/30 p-3 rounded-xl border border-red-900"></div>
+
         <div class="w-full">
             <label class="block text-zinc-400 text-lg mb-2 font-semibold">Seleziona Modalità</label>
             <select id="mode-select" class="w-full bg-zinc-900 text-white text-xl p-4 rounded-xl border border-zinc-700 outline-none focus:border-amber-500">
-                <option value="live">Sottotitoli Live (Scorrimento continuo)</option>
+                <option value="live">Sottotitoli Live (Scorrimento)</option>
                 <option value="teams">Modalità Teams (Ultime 3 frasi)</option>
             </select>
         </div>
 
         <button id="start-btn" class="w-full bg-amber-500 text-black text-2xl font-bold py-5 px-8 rounded-xl active:scale-95 transition-transform">
-            Avvia HUD
+            Avvia HUD e Sblocca Mic
         </button>
-        <p class="text-zinc-600 text-sm text-center">L'app richiederà l'accesso al microfono per la trascrizione e impedirà il blocco dello schermo.</p>
+        <p class="text-zinc-600 text-sm text-center">L'app richiederà l'accesso hardware al microfono dei Ray-Ban Meta.</p>
     </div>
 
     <div id="hud-screen" class="hidden w-[600px] h-[600px] flex flex-col justify-end p-4 relative">
-        
-        <div id="text-container" class="w-full flex flex-col justify-end space-y-5 text-[40px] leading-tight font-extrabold pb-4">
-            </div>
-
-        <div id="status-dot" class="absolute top-4 right-4 w-4 h-4 bg-red-600 rounded-full animate-pulse hidden"></div>
+        <div id="text-container" class="w-full flex flex-col justify-end space-y-5 text-[40px] leading-tight font-extrabold pb-4"></div>
+        <div id="status-dot" class="absolute top-4 right-4 w-4 h-4 bg-red-600 rounded-full animate-pulse"></div>
     </div>
 
     <script>
@@ -52,125 +49,116 @@
         const modeSelect = document.getElementById('mode-select');
         const textContainer = document.getElementById('text-container');
         const statusDot = document.getElementById('status-dot');
+        const errorLog = document.getElementById('error-log');
 
         let wakeLock = null;
         let currentMode = 'live';
-        let teamsSentences = []; // Buffer per la modalità Teams
+        let teamsSentences = [];
 
-        // [INIZIALIZZAZIONE WEB SPEECH API]
-        // Si copre sia l'implementazione standard che quella WebKit (Safari/iOS)
+        function showError(msg) {
+            errorLog.textContent = msg;
+            errorLog.classList.remove('hidden');
+        }
+
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
 
         if (!SpeechRecognition) {
-            alert("Il tuo browser non supporta la Web Speech API. Utilizza un browser basato su Chromium o Safari aggiornato.");
-        } else {
-            const recognition = new SpeechRecognition();
+            showError("Errore: Questo browser sui Ray-Ban non supporta la Web Speech API.");
+        }
 
-            // [PARAMETRI REGOLABILI API VOCALE]
-            // continuous = true : Mantiene il microfono aperto anche quando smetti di parlare (fondamentale per le riunioni).
-            recognition.continuous = true;
-            
-            // interimResults = true : Restituisce le parole mentre le stai ancora pronunciando, offrendo un vero effetto "Live".
-            recognition.interimResults = true;
-            
-            // lang : Imposta la lingua. Cambialo in 'en-US' se hai call internazionali in inglese.
-            recognition.lang = 'it-IT';
+        startBtn.addEventListener('click', async () => {
+            currentMode = modeSelect.value;
+            errorLog.classList.add('hidden'); // Resetta errori precedenti
 
-            recognition.onstart = () => {
-                statusDot.classList.remove('hidden');
-            };
+            // STAGE 1: Forzatura autorizzazione Microfono tramite getUserMedia
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Se otteniamo lo stream, lo chiudiamo subito: ci serviva solo a svegliare il permesso di sistema
+                stream.getTracks().forEach(track => track.stop());
+            } catch (err) {
+                showError(`Permesso Mic Negato: ${err.name}. Controlla le impostazioni dei Ray-Ban.`);
+                return; // Blocca l'esecuzione se il sistema rifiuta il mic
+            }
 
-            recognition.onerror = (event) => {
-                console.error("Errore di riconoscimento:", event.error);
-                statusDot.classList.replace('bg-red-600', 'bg-zinc-800'); // Indicatore di errore visivo silente
-            };
+            // STAGE 2: Attivazione del Riconoscimento Vocale
+            if (SpeechRecognition) {
+                const recognition = new SpeechRecognition();
+                recognition.continuous = true;
+                recognition.interimResults = true;
+                recognition.lang = 'it-IT';
 
-            // Riavvio automatico in caso di interruzione (es. timeout di silenzio del browser)
-            recognition.onend = () => {
-                try {
-                    recognition.start();
-                } catch(e) {}
-            };
+                recognition.onstart = () => {
+                    statusDot.classList.replace('bg-red-600', 'bg-green-500'); // Diventa verde quando ascolta davvero
+                    setupScreen.classList.add('hidden');
+                    hudScreen.classList.remove('hidden');
+                    richiediWakeLock();
+                };
 
-            recognition.onresult = (event) => {
-                let interimTranscript = '';
-                let finalTranscript = '';
+                recognition.onerror = (event) => {
+                    console.error("Errore Speech:", event.error);
+                    statusDot.classList.replace('bg-green-500', 'bg-red-600');
+                    // Se l'errore avviene ad HUD avviato, stampiamo l'errore direttamente nell'HUD per leggerlo sulla lente
+                    const errPar = document.createElement('p');
+                    errPar.className = "text-red-500 text-2xl font-bold";
+                    errPar.textContent = `Errore Vocale: ${event.error}`;
+                    textContainer.appendChild(errPar);
+                };
 
-                // Ciclo per separare le frasi definitive da quelle provvisorie lette in tempo reale
-                for (let i = event.resultIndex; i < event.results.length; ++i) {
-                    if (event.results[i].isFinal) {
-                        finalTranscript += event.results[i][0].transcript;
-                    } else {
-                        interimTranscript += event.results[i][0].transcript;
+                recognition.onend = () => {
+                    // Riavvio automatico continuo
+                    try { recognition.start(); } catch(e) {}
+                };
+
+                recognition.onresult = (event) => {
+                    let interimTranscript = '';
+                    let finalTranscript = '';
+
+                    for (let i = event.resultIndex; i < event.results.length; ++i) {
+                        if (event.results[i].isFinal) {
+                            finalTranscript += event.results[i][0].transcript;
+                        } else {
+                            interimTranscript += event.results[i][0].transcript;
+                        }
                     }
-                }
-
-                aggiornaInterfaccia(finalTranscript, interimTranscript);
-            };
-
-            startBtn.addEventListener('click', async () => {
-                currentMode = modeSelect.value;
-                
-                // Transizione UI
-                setupScreen.classList.add('hidden');
-                hudScreen.classList.remove('hidden');
-
-                // Richiede il Wake Lock e avvia l'ascolto simultaneamente
-                richiediWakeLock();
+                    aggiornaInterfaccia(finalTranscript, interimTranscript);
+                };
 
                 try {
                     recognition.start();
                 } catch (e) {
-                    console.error("Errore avvio microfono", e);
+                    showError(`Impossibile avviare SpeechRecognition: ${e.message}`);
                 }
-            });
-        }
+            }
+        });
 
-        // Funzione core di rendering per le due modalità visive
         function aggiornaInterfaccia(finale, provvisorio) {
             if (currentMode === 'live') {
-                // [MODALITÀ LIVE]
                 if (finale) {
                     const p = document.createElement('p');
                     p.className = "text-amber-400 drop-shadow-[0_2px_2px_rgba(0,0,0,1)]"; 
                     p.textContent = finale;
                     textContainer.appendChild(p);
                 }
-
-                // Pulizia dei frammenti provvisori precedenti per non sdoppiare il testo
                 const vecchiProvvisori = textContainer.querySelectorAll('.provvisorio');
                 vecchiProvvisori.forEach(el => el.remove());
 
                 if (provvisorio) {
                     const pProv = document.createElement('p');
-                    // Il testo provvisorio è leggermente più scuro/opaco
                     pProv.className = "provvisorio text-amber-600 opacity-80 italic";
                     pProv.textContent = provvisorio;
                     textContainer.appendChild(pProv);
                 }
-
-                // Garbage Collection del DOM: mantiene solo gli ultimi 8 elementi per non collassare la memoria o spingere il testo fuori dal 600x600
                 while (textContainer.children.length > 8) {
                     textContainer.removeChild(textContainer.firstChild);
                 }
-
             } else {
-                // [MODALITÀ TEAMS]
                 if (finale) {
                     teamsSentences.push(finale);
-                    // Rimuove la frase più vecchia se superiamo le 3 frasi
-                    if (teamsSentences.length > 3) {
-                        teamsSentences.shift();
-                    }
+                    if (teamsSentences.length > 3) teamsSentences.shift();
                 }
-
-                // Svuota completamente il container ad ogni refresh
                 textContainer.innerHTML = '';
-
-                // Ricostruisce la vista dall'array buffer
                 teamsSentences.forEach((frase, index) => {
                     const p = document.createElement('p');
-                    // Gerarchia visiva: l'elemento più vecchio (indice 0) sbiadisce se abbiamo 3 elementi totali
                     if (index === 0 && teamsSentences.length === 3) {
                         p.className = "text-amber-500 opacity-50";
                     } else {
@@ -179,8 +167,6 @@
                     p.textContent = frase;
                     textContainer.appendChild(p);
                 });
-
-                // Aggiunge la coda provvisoria in coda
                 if (provvisorio) {
                     const pProv = document.createElement('p');
                     pProv.className = "text-amber-600 opacity-80 italic";
@@ -190,27 +176,11 @@
             }
         }
 
-        // [SCREEN WAKE LOCK API]
-        // Mantiene lo schermo attivo bypassando le impostazioni di timeout del sistema operativo
         async function richiediWakeLock() {
             if ('wakeLock' in navigator) {
-                try {
-                    wakeLock = await navigator.wakeLock.request('screen');
-                    wakeLock.addEventListener('release', () => {
-                        console.log('Screen Wake Lock perso (es. cambio tab)');
-                    });
-                } catch (err) {
-                    console.error(`Errore Wake Lock: ${err.name}, ${err.message}`);
-                }
+                try { wakeLock = await navigator.wakeLock.request('screen'); } catch (err) {}
             }
         }
-
-        // Riapplica il Wake Lock automaticamente se si torna sulla pagina dopo averla messa in background
-        document.addEventListener('visibilitychange', async () => {
-            if (wakeLock !== null && document.visibilityState === 'visible') {
-                richiediWakeLock();
-            }
-        });
     </script>
 </body>
 </html>
