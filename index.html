@@ -832,7 +832,7 @@
                 filteredEvents.forEach(ev=>{
                     let icon='⏱️'; const t=(ev.type?.text||'').toLowerCase();
                     if (t.includes('goal') && !t.includes('own')) icon='⚽';
-                    else if (t.includes('own goal')) icon='🥅';
+                    else if (t.includes('own goal')) icon='⚽🥅';
                     else if (t.includes('yellow')) icon='🟨';
                     else if (t.includes('red')) icon='🟥';
                     else if (t.includes('penalty') && t.includes('missed')) icon='❌';
