@@ -3,143 +3,513 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<title>HUD Pro Sport Analytics</title>
+<meta name="theme-color" content="#000000">
+<title>HUD Global Live Scores</title>
 <style>
-  :root { --bg: #000; --text: #fff; --dim: #777; --live: #ff3b3b; --calcio: #39ff14; --basket: #ff7b00; --tennis: #e1ff00; }
-  * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-  body { height: 100vh; background: var(--bg); color: var(--text); overflow: hidden; touch-action: none; }
+  :root {
+    --bg: #000000;
+    --text: #ffffff;
+    --dim: #777777;
+    --calcio: #39ff14;
+    --basket: #ff7b00;
+    --tennis: #e1ff00;
+    --live: #ff3b3b;
+    --card-bg: #111111;
+  }
+  
+  * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
+  
+  body, html {
+    height: 100%; background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    overflow: hidden; touch-action: none; 
+  }
 
-  /* UI Base */
-  #header { display: flex; justify-content: space-between; align-items: center; padding: 10px 15px; border-bottom: 2px solid var(--dim); background: #000; }
-  #main-view { height: calc(100% - 45px); width: 100%; position: relative; overflow-y: auto; }
+  #header {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 15px; border-bottom: 2px solid var(--dim);
+    font-size: 14px; font-weight: bold; background: #000; z-index: 10;
+  }
   
-  .match-card { background: #111; border-radius: 12px; padding: 12px; margin: 10px; border-left: 4px solid var(--dim); cursor: pointer; }
-  .status.live { color: var(--live); animation: blink 1.5s infinite; font-weight: bold; }
+  .header-left { display: flex; align-items: center; gap: 10px; }
+
+  #btn-home {
+    display: none; 
+    background: #333; color: #fff; border: none; padding: 4px 10px;
+    border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer;
+  }
+  #btn-home.active { display: block; }
   
-  /* Dettaglio */
-  #match-detail { display: none; padding: 15px; }
+  #sport-title { font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
+  
+  #date-picker {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--dim); padding: 5px 8px;
+    border-radius: 6px; font-family: inherit; font-size: 13px;
+    color-scheme: dark; outline: none; cursor: pointer;
+  }
+
+  #main-view {
+    height: calc(100% - 45px); width: 100%; position: relative;
+  }
+
+  #matches-list {
+    height: 100%; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;
+    padding-bottom: 30px;
+  }
+  #matches-list::-webkit-scrollbar { display: none; }
+
+  .match-card {
+    background: var(--card-bg); border-radius: 12px; padding: 12px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-left: 4px solid var(--dim); cursor: pointer; transition: transform 0.1s;
+  }
+  .match-card:active { transform: scale(0.98); background: #222; }
+
+  .team-info { display: flex; flex-direction: column; gap: 4px; font-size: 16px; font-weight: 600; }
+  .league-tag { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+  
+  .score-info { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+  .score { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
+  .status.live { color: var(--live); animation: blink 1.5s infinite; font-size: 12px; font-weight: bold; }
+  .status.finished { color: var(--dim); font-size: 12px; }
+  .start-time { font-size: 10px; color: var(--dim); margin-top: 4px; }
+
+  #match-detail {
+    display: none; height: 100%; overflow-y: auto; padding: 15px; background: var(--bg);
+    padding-bottom: 40px;
+  }
   #match-detail.active { display: block; }
-  .section-title { font-size: 14px; color: var(--dim); text-transform: uppercase; margin: 20px 0 10px 0; border-bottom: 1px solid #333; padding-bottom: 5px; }
+  #match-detail::-webkit-scrollbar { display: none; }
+
+  .detail-header { text-align: center; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
+  .detail-score { color: var(--calcio); font-size: 28px; margin: 5px 0; }
   
-  .event-row { background: #1a1a1a; padding: 8px; border-radius: 6px; margin-bottom: 5px; font-size: 14px; display: flex; gap: 10px; }
-  .player-row { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #222; font-size: 13px; }
-  
+  .lineups-section {
+    display: flex; gap: 15px; margin-bottom: 20px;
+  }
+  .lineup-col {
+    flex: 1; background: var(--card-bg); border-radius: 10px; padding: 10px;
+  }
+  .lineup-title {
+    font-size: 14px; font-weight: bold; margin-bottom: 8px; color: var(--calcio);
+    text-align: center;
+  }
+  .lineup-list {
+    list-style: none; font-size: 12px;
+  }
+  .lineup-list li {
+    padding: 3px 0; display: flex; justify-content: space-between;
+    border-bottom: 1px solid #222;
+  }
+  .pos-tag {
+    color: var(--dim); font-size: 10px; font-weight: bold;
+    width: 25px; display: inline-block;
+  }
+  .subs-label {
+    font-size: 12px; font-weight: bold; margin-top: 10px; color: var(--dim);
+  }
+
+  .timeline { display: flex; flex-direction: column; gap: 8px; }
+  .event { background: var(--card-bg); padding: 8px 12px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
+  .event .icon { font-size: 18px; }
+
   @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
+  
+  #footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: var(--dim); background: #000; padding: 4px; border-top: 1px solid #111; z-index: 20; }
 </style>
 </head>
 <body>
 
 <div id="header">
-  <button id="btn-home" style="display:none; background:#333; color:#fff; border:none; padding:5px; border-radius:5px;">⬅ HOME</button>
-  <div id="sport-title" style="font-weight:bold;">CALCIO</div>
-  <input type="date" id="date-picker" style="background:#222; color:#fff; border:none; padding:5px; border-radius:5px;">
+  <div class="header-left">
+    <button id="btn-home">⬅ HOME</button>
+    <div id="sport-title" style="color: var(--calcio);">CALCIO</div>
+  </div>
+  <input type="date" id="date-picker">
 </div>
 
 <div id="main-view">
   <div id="matches-list"></div>
+
   <div id="match-detail">
-    <div id="det-header" style="text-align:center; margin-bottom:20px;"></div>
-    <div class="section-title">Momenti Salienti</div>
-    <div id="det-timeline" class="timeline"></div>
-    <div class="section-title">Formazioni</div>
-    <div id="det-lineups"></div>
+    <div class="detail-header">
+      <div id="det-teams">Squadra A - Squadra B</div>
+      <div class="detail-score" id="det-score">0 - 0</div>
+      <div class="status" id="det-status"></div>
+    </div>
+    <!-- Formazioni -->
+    <div id="det-lineups" style="display:none;">
+      <div class="lineups-section" id="lineups-container"></div>
+    </div>
+    <div class="timeline" id="det-timeline"></div>
   </div>
 </div>
+
+<div id="footer"><b>Swipe:</b> Cambia Sport • <b>Pinch:</b> Dettagli / Home</div>
 
 <script>
 (() => {
   const datePicker = document.getElementById('date-picker');
   const today = new Date();
-  datePicker.value = today.toISOString().split('T')[0];
+  datePicker.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  const sports = ["CALCIO", "BASKET", "TENNIS"];
-  let currentSport = 0;
-  
-  // TRADUTTORE EVENTI IN ITALIANO
-  const translate = (text) => {
-    const t = text.toLowerCase();
-    if (t.includes('goal')) return '⚽ Gol';
-    if (t.includes('yellow card')) return '🟨 Cartellino Giallo';
-    if (t.includes('red card')) return '🟥 Cartellino Rosso';
-    if (t.includes('penalty')) return '❌ Rigore';
-    if (t.includes('substitution')) return '🔄 Sostituzione';
-    if (t.includes('injury')) return '🤕 Infortunio';
-    return text;
+  // Priorità campionati (più basso = più importante, mostrato in cima)
+  const leaguePriority = {
+    "uefa.champions": 1,
+    "fifa.world": 2,
+    "uefa.euro": 3,
+    "eng.1": 4,
+    "esp.1": 5,
+    "ita.1": 6,
+    "ger.1": 7,
+    "fra.1": 8,
+    "uefa.europa": 9,
+    "uefa.conference": 10,
+    "uefa.nations": 11,
+    "ned.1": 12,
+    "por.1": 13,
+    "bra.1": 14,
+    "arg.1": 15,
+    "usa.1": 16,
+    "ksa.1": 17
   };
 
-  async function loadData() {
-    const dateStr = datePicker.value.replace(/-/g, '');
-    const sportName = sports[currentSport];
-    const listEl = document.getElementById('matches-list');
-    listEl.innerHTML = 'Caricamento...';
+  const sportConfigs = {
+    "CALCIO": {
+      color: "var(--calcio)",
+      leagues: [
+        "ita.1", "ita.2", "eng.1", "esp.1", "ger.1", "fra.1", 
+        "uefa.champions", "uefa.europa", "uefa.conference", "fifa.world",
+        "uefa.euro", "uefa.nations", "usa.1", "bra.1", "arg.1", "ksa.1", "ned.1", "por.1"
+      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/soccer/${l}/scoreboard`)
+    },
+    "BASKET": {
+      color: "var(--basket)",
+      leagues: [
+        "nba", "wnba", "euroleague", "mens-college-basketball", "fiba.world"
+      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/basketball/${l}/scoreboard`)
+    },
+    "TENNIS": {
+      color: "var(--tennis)",
+      leagues: [
+        "atp", "wta"
+      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/tennis/${l}/scoreboard`)
+    }
+  };
 
-    // Fetch semplificato per brevità
-    const url = `https://site.api.espn.com/apis/site/v2/sports/${sportName.toLowerCase() === 'calcio' ? 'soccer/ita.1' : 'basketball/nba'}/scoreboard?dates=${dateStr}`;
-    
-    try {
-      const res = await fetch(url);
-      const data = await res.json();
-      let matches = data.events;
+  const sportsList = ["CALCIO", "BASKET", "TENNIS"];
+  let currentSportIndex = 0;
+  let inDetailView = false;
+  let currentMatches = [];
 
-      // ORDINAMENTO INTELLIGENTE (Smart Rank)
-      matches.sort((a, b) => {
-        if (a.status.type.state === 'in' && b.status.type.state !== 'in') return -1;
-        if (a.status.type.state === 'pre' && b.status.type.state === 'post') return -1;
-        return 0;
-      });
+  const matchesListEl = document.getElementById('matches-list');
+  const matchDetailEl = document.getElementById('match-detail');
+  const btnHome = document.getElementById('btn-home');
+  const sportTitleEl = document.getElementById('sport-title');
 
-      listEl.innerHTML = '';
-      matches.forEach(m => {
-        const div = document.createElement('div');
-        div.className = 'match-card';
-        div.innerHTML = `
-          <div style="font-size:12px; color:var(--dim)">${m.name}</div>
-          <div style="font-size:18px; font-weight:bold;">${m.shortName}</div>
-          <div class="${m.status.type.state === 'in' ? 'status live' : ''}">${m.status.type.detail}</div>
-        `;
-        div.onclick = () => showDetail(m);
-        listEl.appendChild(div);
-      });
-    } catch(e) { listEl.innerHTML = 'Nessun dato disponibile.'; }
+  datePicker.addEventListener('change', () => loadDataAndRender());
+
+  // Traduzione testo eventi in italiano
+  function translateEventText(text) {
+    if (!text) return '';
+    return text
+      .replace(/\bGoal\b/gi, 'Gol')
+      .replace(/\bYellow card\b/gi, 'Cartellino giallo')
+      .replace(/\bRed card\b/gi, 'Cartellino rosso')
+      .replace(/\bPenalty\b/gi, 'Rigore')
+      .replace(/\bSubstitution\b/gi, 'Sostituzione')
+      .replace(/\bin\b/gi, 'entra')
+      .replace(/\bout\b/gi, 'esce')
+      .replace(/\bInjury\b/gi, 'Infortunio')
+      .replace(/\bOwn goal\b/gi, 'Autogol')
+      .replace(/\bMissed penalty\b/gi, 'Rigore sbagliato');
   }
 
-  async function showDetail(match) {
-    document.getElementById('matches-list').style.display = 'none';
-    document.getElementById('match-detail').classList.add('active');
-    document.getElementById('btn-home').style.display = 'block';
-    
-    const summaryUrl = `https://site.api.espn.com/apis/site/v2/sports/${sports[currentSport].toLowerCase() === 'calcio' ? 'soccer/ita.1' : 'basketball/nba'}/summary?event=${match.id}`;
-    const res = await fetch(summaryUrl);
-    const data = await res.json();
+  // Mappa posizioni in italiano
+  const positionIT = {
+    "GK": "POR",
+    "DF": "DIF",
+    "MF": "CEN",
+    "FW": "ATT"
+  };
 
-    // Timeline Tradotta
-    const timeline = document.getElementById('det-timeline');
-    timeline.innerHTML = '';
-    (data.keyEvents || []).forEach(ev => {
-      timeline.innerHTML += `<div class="event-row"><span>${ev.clock?.displayValue || ''}</span><span>${translate(ev.text)}</span></div>`;
+  async function fetchRealData(sportName, dateStr) {
+    const config = sportConfigs[sportName];
+    let allMatches = [];
+    
+    const fetchPromises = config.leagues.map(async (baseUrl) => {
+      try {
+        const leagueSlug = baseUrl.split('/').pop(); // estrae "ita.1" ecc.
+        const fetchUrl = `${baseUrl}?dates=${dateStr}`;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) return [];
+        const data = await response.json();
+        
+        if (data.events) {
+          return data.events.map(event => {
+            const comp = event.competitions[0];
+            const home = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
+            const away = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
+            
+            const leagueName = data.leagues && data.leagues[0] ? (data.leagues[0].abbreviation || data.leagues[0].name) : '';
+
+            return {
+              id: event.id,
+              leagueSlug: leagueSlug,
+              league: leagueName,
+              home: home.team.shortDisplayName || home.team.name,
+              away: away.team.shortDisplayName || away.team.name,
+              scoreH: home.score || '0',
+              scoreA: away.score || '0',
+              status: event.status.type.shortDetail,
+              state: event.status.type.state,
+              isLive: event.status.type.state === 'in',
+              time: new Date(event.date).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'}),
+              summaryUrl: baseUrl.replace('/scoreboard', '/summary?event=' + event.id)
+            };
+          });
+        }
+        return [];
+      } catch (error) {
+        return [];
+      }
     });
 
-    // Formazioni
-    const lineups = document.getElementById('det-lineups');
-    lineups.innerHTML = '';
-    if(data.boxscore?.teams) {
-        data.boxscore.teams.forEach(team => {
-            lineups.innerHTML += `<div style="margin-top:10px; font-weight:bold;">${team.team.displayName}</div>`;
-            (team.players || []).forEach(p => {
-                if(p.starter) lineups.innerHTML += `<div class="player-row"><span>${p.athlete.displayName}</span><span>${p.position}</span></div>`;
+    const results = await Promise.all(fetchPromises);
+    results.forEach(matches => { allMatches = allMatches.concat(matches); });
+
+    // Ordinamento: priorità campionato → live → pre/post → orario
+    allMatches.sort((a, b) => {
+      const priorityA = leaguePriority[a.leagueSlug] ?? 100;
+      const priorityB = leaguePriority[b.leagueSlug] ?? 100;
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      if (a.isLive && !b.isLive) return -1;
+      if (!a.isLive && b.isLive) return 1;
+      if (a.state === 'pre' && b.state === 'post') return -1;
+      if (a.state === 'post' && b.state === 'pre') return 1;
+      // A parità di stato, ordine cronologico (pre: ora crescente, post: ora decrescente)
+      const timeA = a.time ? a.time : '00:00';
+      const timeB = b.time ? b.time : '00:00';
+      if (a.state === 'pre') return timeA.localeCompare(timeB);
+      if (a.state === 'post') return timeB.localeCompare(timeA);
+      return 0;
+    });
+
+    return allMatches;
+  }
+
+  async function loadDataAndRender() {
+    inDetailView = false;
+    matchDetailEl.classList.remove('active');
+    btnHome.classList.remove('active');
+    matchesListEl.style.display = 'flex';
+    
+    const sportName = sportsList[currentSportIndex];
+    const config = sportConfigs[sportName];
+    const espnDate = datePicker.value.replace(/-/g, '');
+    
+    sportTitleEl.textContent = sportName;
+    sportTitleEl.style.color = config.color;
+    document.getElementById('header').style.borderColor = config.color;
+    
+    matchesListEl.innerHTML = '<div style="text-align:center; padding:30px;">Aggiornamento dati mondiali...<br><span style="font-size:10px;color:gray;">Connessione ai server sportivi</span></div>';
+    
+    currentMatches = await fetchRealData(sportName, espnDate);
+    
+    matchesListEl.innerHTML = '';
+    
+    if (currentMatches.length === 0) {
+       matchesListEl.innerHTML = '<div style="text-align:center; padding:30px; color:gray;">Nessuna partita rilevante per la data selezionata.</div>';
+       return;
+    }
+    
+    currentMatches.forEach(match => {
+      const card = document.createElement('div');
+      card.className = 'match-card';
+      card.dataset.id = match.id;
+      card.style.borderLeftColor = config.color;
+      
+      const statusClass = match.isLive ? 'status live' : 'status finished';
+
+      card.innerHTML = `
+        <div class="team-info">
+          <span class="league-tag">${match.league}</span>
+          <span>${match.home}</span>
+          <span>${match.away}</span>
+        </div>
+        <div class="score-info">
+          <span class="score">${match.scoreH} - ${match.scoreA}</span>
+          <span class="${statusClass}">${match.status}</span>
+          <span class="start-time">${match.state === 'pre' ? 'Ore: ' + match.time : 'Inizio: ' + match.time}</span>
+        </div>
+      `;
+      
+      matchesListEl.appendChild(card);
+    });
+  }
+
+  async function openDetail(match) {
+    inDetailView = true;
+    matchesListEl.style.display = 'none';
+    matchDetailEl.classList.add('active');
+    btnHome.classList.add('active');
+
+    const config = sportConfigs[sportsList[currentSportIndex]];
+    const color = config.color;
+
+    document.getElementById('det-teams').innerHTML = `<span style="font-size:12px; color:gray;">${match.league}</span><br>${match.home} - ${match.away}`;
+    document.getElementById('det-score').textContent = `${match.scoreH} - ${match.scoreA}`;
+    document.getElementById('det-score').style.color = color;
+    
+    const statusEl = document.getElementById('det-status');
+    statusEl.textContent = match.status;
+    statusEl.className = match.isLive ? 'status live' : 'status finished';
+
+    const timelineEl = document.getElementById('det-timeline');
+    const lineupsContainer = document.getElementById('lineups-container');
+    const detLineups = document.getElementById('det-lineups');
+    detLineups.style.display = 'none';
+    timelineEl.innerHTML = '<div style="text-align:center; padding: 30px;">Scaricamento dati...</div>';
+
+    try {
+      const res = await fetch(match.summaryUrl);
+      const summaryData = await res.json();
+      
+      timelineEl.innerHTML = '';
+
+      // --- Estrazione formazioni ---
+      const competitors = summaryData?.gamepackage?.competition?.competitors;
+      if (competitors && competitors.length === 2) {
+        let homeComp = competitors.find(c => c.homeAway === 'home');
+        let awayComp = competitors.find(c => c.homeAway === 'away');
+        if (!homeComp || !awayComp) {
+          // fallback
+          homeComp = competitors[0];
+          awayComp = competitors[1];
+        }
+
+        const buildLineupHTML = (teamComp) => {
+          const roster = teamComp.roster?.entries || [];
+          const starters = roster.filter(p => p.starter).sort((a,b) => (a.order || 0) - (b.order || 0));
+          const subs = roster.filter(p => !p.starter);
+
+          const name = teamComp.team.shortDisplayName || teamComp.team.name;
+          let html = `<div class="lineup-col">
+            <div class="lineup-title">${name}</div>
+            <ul class="lineup-list">`;
+          starters.forEach(p => {
+            const posAbb = p.position?.abbreviation || '';
+            const posIT = positionIT[posAbb] || posAbb;
+            html += `<li><span>${p.athlete?.shortName || p.athlete?.displayName || 'N/A'}</span><span class="pos-tag">${posIT}</span></li>`;
+          });
+          html += `</ul>`;
+          if (subs.length > 0) {
+            html += `<div class="subs-label">Panchina</div><ul class="lineup-list">`;
+            subs.forEach(p => {
+              html += `<li>${p.athlete?.shortName || p.athlete?.displayName || 'N/A'}</li>`;
             });
+            html += `</ul>`;
+          }
+          html += `</div>`;
+          return html;
+        };
+
+        lineupsContainer.innerHTML = buildLineupHTML(homeComp) + buildLineupHTML(awayComp);
+        detLineups.style.display = 'block';
+      } else {
+        detLineups.style.display = 'none';
+      }
+
+      // --- Eventi chiave tradotti ---
+      if (summaryData.keyEvents && summaryData.keyEvents.length > 0) {
+        summaryData.keyEvents.forEach(ev => {
+          let icon = '⏱️';
+          if (ev.type && ev.type.text) {
+            const t = ev.type.text.toLowerCase();
+            if (t.includes('goal')) icon = '⚽';
+            else if (t.includes('yellow')) icon = '🟨';
+            else if (t.includes('red')) icon = '🟥';
+            else if (t.includes('penalty')) icon = '❌';
+            else if (t.includes('substitution')) icon = '🔄';
+            else if (t.includes('injury')) icon = '🩹';
+          }
+          const rawText = ev.text || ev.shortText || 'Evento non specificato';
+          const itaText = translateEventText(rawText);
+          
+          timelineEl.innerHTML += `
+            <div class="event">
+              <span style="font-weight:bold; color:${color}; min-width:40px;">${ev.clock ? ev.clock.displayValue : ''}</span>
+              <span class="icon">${icon}</span>
+              <span>${itaText}</span>
+            </div>
+          `;
         });
+      } else {
+        timelineEl.innerHTML = '<div style="text-align:center; color:gray; font-size:12px; margin-top:20px;">Nessun evento disponibile.</div>';
+      }
+    } catch(e) {
+      timelineEl.innerHTML = '<div style="text-align:center; color:red; font-size:12px; margin-top:20px;">Errore di connessione al server eventi.</div>';
     }
   }
 
-  document.getElementById('btn-home').onclick = () => {
-    document.getElementById('matches-list').style.display = 'block';
-    document.getElementById('match-detail').classList.remove('active');
-    document.getElementById('btn-home').style.display = 'none';
-  };
+  // --- GESTURE E TASTIERA ---
+  let touchStartX = 0;
+  let touchStartY = 0;
 
-  datePicker.onchange = loadData;
-  loadData();
+  document.addEventListener('pointerdown', e => {
+    touchStartX = e.clientX;
+    touchStartY = e.clientY;
+  });
+
+  document.addEventListener('pointerup', e => {
+    if (e.target.id === 'date-picker') return;
+
+    const touchEndX = e.clientX;
+    const touchEndY = e.clientY;
+    const diffX = touchEndX - touchStartX;
+    const diffY = Math.abs(touchEndY - touchStartY);
+
+    if (Math.abs(diffX) < 20 && diffY < 20) {
+      if (e.target.closest('#btn-home') && inDetailView) {
+        loadDataAndRender();
+        return;
+      }
+      const card = e.target.closest('.match-card');
+      if (card && !inDetailView) {
+        const matchId = card.dataset.id;
+        const match = currentMatches.find(m => m.id === matchId);
+        if(match) openDetail(match);
+      }
+      return;
+    }
+
+    if (inDetailView) return;
+
+    if (diffX > 60) {
+      currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1;
+      loadDataAndRender();
+    } else if (diffX < -60) {
+      currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex + 1;
+      loadDataAndRender();
+    }
+  });
+
+  window.addEventListener('keydown', (e) => {
+    if (inDetailView && e.key === 'Backspace') loadDataAndRender();
+    if (!inDetailView) {
+      if (e.key === 'ArrowRight') {
+        currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex + 1;
+        loadDataAndRender();
+      }
+      if (e.key === 'ArrowLeft') {
+        currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1;
+        loadDataAndRender();
+      }
+    }
+  });
+
+  loadDataAndRender();
 })();
 </script>
 </body>
