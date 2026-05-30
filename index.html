@@ -198,7 +198,6 @@
 
     <div id="match-detail">
         <div id="detail-slider">
-            <!-- PANNELLO FORMAZIONI + TIMELINE -->
             <div id="panel-formazioni" class="detail-panel">
                 <div class="detail-header">
                     <div class="league-row">
@@ -214,7 +213,6 @@
                 <div class="timeline" id="det-timeline"></div>
             </div>
 
-            <!-- PANNELLO CLASSIFICA -->
             <div id="panel-classifica" class="detail-panel">
                 <div class="classifica-header">
                     <span class="classifica-title" id="classifica-title">Classifica</span>
@@ -244,23 +242,47 @@
         "usa.1":16, "ksa.1":17
     };
 
+    // Ogni elemento ha uno slug e un url
     const sportConfigs = {
         "CALCIO": {
             color: "var(--accent-calcio)",
             leagues: [
-                "ita.1","ita.2","eng.1","esp.1","ger.1","fra.1","uefa.champions","uefa.europa",
-                "uefa.conference","fifa.world","uefa.euro","uefa.nations","usa.1","bra.1","arg.1",
-                "ksa.1","ned.1","por.1"
-            ].map(l => `https://site.api.espn.com/apis/site/v2/sports/soccer/${l}/scoreboard`)
+                { slug: "ita.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard" },
+                { slug: "ita.2", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard" },
+                { slug: "eng.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard" },
+                { slug: "esp.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard" },
+                { slug: "ger.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard" },
+                { slug: "fra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard" },
+                { slug: "uefa.champions", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard" },
+                { slug: "uefa.europa", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard" },
+                { slug: "uefa.conference", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard" },
+                { slug: "fifa.world", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" },
+                { slug: "uefa.euro", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.euro/scoreboard" },
+                { slug: "uefa.nations", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard" },
+                { slug: "usa.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard" },
+                { slug: "bra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard" },
+                { slug: "arg.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard" },
+                { slug: "ksa.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ksa.1/scoreboard" },
+                { slug: "ned.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard" },
+                { slug: "por.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard" }
+            ]
         },
         "BASKET": {
             color: "var(--accent-basket)",
-            leagues: ["nba","wnba","euroleague","mens-college-basketball","fiba.world"]
-                .map(l => `https://site.api.espn.com/apis/site/v2/sports/basketball/${l}/scoreboard`)
+            leagues: [
+                { slug: "nba", url: "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard" },
+                { slug: "wnba", url: "https://site.api.espn.com/apis/site/v2/sports/basketball/wnba/scoreboard" },
+                { slug: "euroleague", url: "https://site.api.espn.com/apis/site/v2/sports/basketball/euroleague/scoreboard" },
+                { slug: "mens-college-basketball", url: "https://site.api.espn.com/apis/site/v2/sports/basketball/mens-college-basketball/scoreboard" },
+                { slug: "fiba.world", url: "https://site.api.espn.com/apis/site/v2/sports/basketball/fiba.world/scoreboard" }
+            ]
         },
         "TENNIS": {
             color: "var(--accent-tennis)",
-            leagues: ["atp","wta"].map(l => `https://site.api.espn.com/apis/site/v2/sports/tennis/${l}/scoreboard`)
+            leagues: [
+                { slug: "atp", url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard" },
+                { slug: "wta", url: "https://site.api.espn.com/apis/site/v2/sports/tennis/wta/scoreboard" }
+            ]
         }
     };
 
@@ -323,14 +345,14 @@
         detailSlider.classList.remove('show-classifica');
     }
 
-    // --- FETCH PARTITE ---
+    // --- FETCH PARTITE (con slug esatto) ---
     async function fetchRealData(sportName, dateStr) {
         const config = sportConfigs[sportName];
         let allMatches = [];
-        const fetchPromises = config.leagues.map(async (baseUrl) => {
+        const fetchPromises = config.leagues.map(async (leagueObj) => {
             try {
-                const leagueSlug = baseUrl.split('/').pop();
-                const fetchUrl = `${baseUrl}?dates=${dateStr}`;
+                const { slug, url } = leagueObj;
+                const fetchUrl = `${url}?dates=${dateStr}`;
                 const response = await fetch(fetchUrl);
                 if (!response.ok) return [];
                 const data = await response.json();
@@ -341,14 +363,16 @@
                         const away = comp.competitors.find(c=>c.homeAway==='away') || comp.competitors[1];
                         const leagueName = data.leagues?.[0] ? (data.leagues[0].abbreviation||data.leagues[0].name) : '';
                         return {
-                            id: event.id, leagueSlug, league: leagueName,
+                            id: event.id,
+                            leagueSlug: slug,
+                            league: leagueName || slug,
                             home: home?.team?.shortDisplayName || home?.team?.name || '???',
                             away: away?.team?.shortDisplayName || away?.team?.name || '???',
                             scoreH: home?.score??'0', scoreA: away?.score??'0',
                             status: event.status.type.shortDetail || '', state: event.status.type.state,
                             isLive: event.status.type.state==='in',
                             time: new Date(event.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
-                            summaryUrl: baseUrl.replace('/scoreboard','/summary?event='+event.id)
+                            summaryUrl: url.replace('/scoreboard','/summary?event='+event.id)
                         };
                     });
                 }
@@ -459,7 +483,6 @@
             const res = await fetch(match.summaryUrl);
             const summaryData = await res.json();
 
-            // Estrai stagione per classifica
             let seasonYear = new Date().getFullYear();
             if (summaryData?.header?.season?.year) seasonYear = summaryData.header.season.year;
             else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
@@ -468,7 +491,7 @@
             const competitors = summaryData?.gamepackage?.competition?.competitors;
             const allKeyEvents = summaryData?.keyEvents || [];
 
-            // Mappa eventi per giocatore (nome -> [{type, minute}])
+            // Mappa eventi per giocatore
             const playerEvents = {};
             const importantTypes = ['goal','yellow','red','penalty','injury','assist','var','own goal','missed penalty'];
             allKeyEvents.forEach(ev => {
@@ -489,18 +512,7 @@
                 playerEvents[pName].push({type, minute});
             });
 
-            // Costruzione formazioni
-            let allPlayers = []; // per entrambe le squadre
-            const buildTeamPlayers = (rosterEntries) => {
-                return rosterEntries.map(p => {
-                    const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
-                    const nameLower = name.toLowerCase();
-                    const pos = p.position?.abbreviation ? (positionIT[p.position.abbreviation]||p.position.abbreviation) : '';
-                    return { name, nameLower, pos, events: playerEvents[nameLower] || [] };
-                });
-            };
-
-            // Prova a prendere roster da competitors, altrimenti da gamepackage.rosters
+            // Costruzione formazioni (con fallback robusto)
             let homeRoster, awayRoster, homeTeamName, awayTeamName;
             if (competitors && competitors.length===2) {
                 homeRoster = competitors[0].roster?.entries;
@@ -508,7 +520,6 @@
                 homeTeamName = competitors[0].team?.shortDisplayName || competitors[0].team?.name || 'Casa';
                 awayTeamName = competitors[1].team?.shortDisplayName || competitors[1].team?.name || 'Trasferta';
             }
-            // Fallback a gamepackage.rosters
             if ((!homeRoster || homeRoster.length===0) && summaryData?.gamepackage?.rosters) {
                 const rostersByTeam = summaryData.gamepackage.rosters;
                 if (rostersByTeam.length>=2) {
@@ -520,12 +531,9 @@
             }
 
             if (homeRoster && homeRoster.length>0 && awayRoster && awayRoster.length>0) {
-                const homeStarters = homeRoster.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
-                const homeSubs = homeRoster.filter(p=>!p.starter);
-                const awayStarters = awayRoster.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
-                const awaySubs = awayRoster.filter(p=>!p.starter);
-
-                const buildCol = (teamName, starters, subs) => {
+                const buildCol = (teamName, rosterEntries) => {
+                    const starters = rosterEntries.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
+                    const subs = rosterEntries.filter(p=>!p.starter);
                     let html = `<div class="lineup-col"><div class="lineup-title">${teamName}</div><ul class="lineup-list">`;
                     starters.forEach(p=>{
                         const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
@@ -556,8 +564,7 @@
                     html += `</div>`;
                     return html;
                 };
-
-                lineupsContainer.innerHTML = buildCol(homeTeamName, homeStarters, homeSubs) + buildCol(awayTeamName, awayStarters, awaySubs);
+                lineupsContainer.innerHTML = buildCol(homeTeamName, homeRoster) + buildCol(awayTeamName, awayRoster);
             } else {
                 lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
             }
@@ -596,7 +603,7 @@
         }
     }
 
-    // --- CLASSIFICA EMBEDDED ---
+    // --- CLASSIFICA EMBEDDED (con tentativo senza stagione) ---
     async function loadClassifica(leagueSlug, leagueName, seasonYear) {
         classificaTitleEl.textContent = '📊 '+(leagueName||leagueSlug);
         classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
@@ -609,7 +616,7 @@
         try {
             let data = await trySeason(seasonYear);
             if (!data || !data.standings?.entries?.length) {
-                data = await trySeason(null); // prova senza stagione
+                data = await trySeason(null);
             }
             const entries = data?.standings?.entries || [];
             if (entries.length===0) {
@@ -633,7 +640,7 @@
         }
     }
 
-    // --- GESTURE GLOBALI (lista partite) ---
+    // --- GESTURE GLOBALI ---
     let globalStartX=0, globalStartY=0;
     document.addEventListener('pointerdown', e => { globalStartX = e.clientX; globalStartY = e.clientY; });
     document.addEventListener('pointerup', e => {
