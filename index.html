@@ -78,6 +78,8 @@
         }
         .match-card:active { transform: scale(0.985); background: #1a2338; }
         .team-info { display: flex; flex-direction: column; gap: 3px; font-size: 15px; font-weight: 700; line-height: 1.2; min-width: 0; flex: 1; }
+        .team-row { display: flex; align-items: center; gap: 6px; }
+        .team-logo { width: 20px; height: 20px; object-fit: contain; border-radius: 50%; background: var(--surface2); }
         .league-tag { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .score-info { text-align: right; display: flex; flex-direction: column; align-items: flex-end; min-width: 60px; flex-shrink: 0; }
         .score { font-size: 22px; font-weight: 900; letter-spacing: 1px; font-variant-numeric: tabular-nums; font-family: 'Inter','SF Mono',monospace; }
@@ -108,7 +110,8 @@
             font-size: 9px; color: var(--text3); background: var(--surface2); padding: 3px 10px;
             border-radius: 12px; letter-spacing: 0.5px; font-weight: 600; margin-left: 8px;
         }
-        .detail-teams { font-size: 18px; font-weight: 800; margin-top: 6px; letter-spacing: 0.3px; }
+        .detail-teams-row { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; font-size: 18px; font-weight: 800; letter-spacing: 0.3px; }
+        .detail-logo { width: 32px; height: 32px; object-fit: contain; border-radius: 50%; background: var(--surface2); }
         .detail-score { font-size: 36px; font-weight: 900; margin: 6px 0; letter-spacing: 2px; font-variant-numeric: tabular-nums; font-family: 'Inter','SF Mono',monospace; }
         .detail-status { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 14px; display: inline-block; letter-spacing: 0.4px; }
 
@@ -204,7 +207,11 @@
                         <span class="league-name" id="det-league"></span>
                         <span class="swipe-hint-detail">← Classifica | Formazioni →</span>
                     </div>
-                    <div class="detail-teams" id="det-teams">Squadra A - Squadra B</div>
+                    <div class="detail-teams-row" id="det-teams-row">
+                        <img class="detail-logo" id="det-home-logo" src="" alt="">
+                        <span id="det-teams">Squadra A - Squadra B</span>
+                        <img class="detail-logo" id="det-away-logo" src="" alt="">
+                    </div>
                     <div class="detail-score" id="det-score">0 - 0</div>
                     <span class="detail-status" id="det-status"></span>
                 </div>
@@ -234,37 +241,34 @@
     const today = new Date();
     datePicker.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-    // Priorità campionati (numero più basso = più in alto)
     const leaguePriority = {
-        "uefa.champions":1, "fifa.world":2, "uefa.euro":3, "eng.1":4, "esp.1":5,
-        "ita.1":6, "ger.1":7, "fra.1":8, "uefa.europa":9, "uefa.conference":10,
+        "uefa.champions":1, "fifa.world":2, "uefa.euro":3, "ita.1":4, "esp.1":5,
+        "eng.1":6, "ger.1":7, "fra.1":8, "uefa.europa":9, "uefa.conference":10,
         "uefa.nations":11, "ned.1":12, "por.1":13, "bra.1":14, "arg.1":15,
         "usa.1":16, "ksa.1":17
     };
 
-    // Ogni elemento ha uno slug e un url
     const sportConfigs = {
         "CALCIO": {
             color: "var(--accent-calcio)",
             leagues: [
-                { slug: "ita.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard" },
-                { slug: "ita.2", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.2/scoreboard" },
-                { slug: "eng.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard" },
-                { slug: "esp.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard" },
-                { slug: "ger.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard" },
-                { slug: "fra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard" },
                 { slug: "uefa.champions", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard" },
-                { slug: "uefa.europa", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard" },
-                { slug: "uefa.conference", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard" },
                 { slug: "fifa.world", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" },
                 { slug: "uefa.euro", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.euro/scoreboard" },
+                { slug: "ita.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard" },
+                { slug: "esp.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard" },
+                { slug: "eng.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard" },
+                { slug: "ger.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard" },
+                { slug: "fra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard" },
+                { slug: "uefa.europa", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard" },
+                { slug: "uefa.conference", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard" },
                 { slug: "uefa.nations", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard" },
-                { slug: "usa.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard" },
+                { slug: "ned.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard" },
+                { slug: "por.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard" },
                 { slug: "bra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard" },
                 { slug: "arg.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/arg.1/scoreboard" },
-                { slug: "ksa.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ksa.1/scoreboard" },
-                { slug: "ned.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard" },
-                { slug: "por.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard" }
+                { slug: "usa.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard" },
+                { slug: "ksa.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ksa.1/scoreboard" }
             ]
         },
         "BASKET": {
@@ -345,7 +349,7 @@
         detailSlider.classList.remove('show-classifica');
     }
 
-    // --- FETCH PARTITE (con slug esatto) ---
+    // --- FETCH PARTITE ---
     async function fetchRealData(sportName, dateStr) {
         const config = sportConfigs[sportName];
         let allMatches = [];
@@ -368,6 +372,8 @@
                             league: leagueName || slug,
                             home: home?.team?.shortDisplayName || home?.team?.name || '???',
                             away: away?.team?.shortDisplayName || away?.team?.name || '???',
+                            homeLogo: home?.team?.logo || '',
+                            awayLogo: away?.team?.logo || '',
                             scoreH: home?.score??'0', scoreA: away?.score??'0',
                             status: event.status.type.shortDetail || '', state: event.status.type.state,
                             isLive: event.status.type.state==='in',
@@ -440,7 +446,8 @@
             card.innerHTML=`
                 <div class="team-info">
                     <span class="league-tag">🏆 ${match.league}</span>
-                    <span>${match.home}</span><span>${match.away}</span>
+                    <div class="team-row"><img class="team-logo" src="${match.homeLogo}" onerror="this.style.display='none'"><span>${match.home}</span></div>
+                    <div class="team-row"><img class="team-logo" src="${match.awayLogo}" onerror="this.style.display='none'"><span>${match.away}</span></div>
                 </div>
                 <div class="score-info">
                     <span class="score">${match.scoreH} - ${match.scoreA}</span>
@@ -466,6 +473,8 @@
 
         document.getElementById('det-league').textContent = '🏆 '+match.league;
         document.getElementById('det-teams').textContent = match.home+' - '+match.away;
+        document.getElementById('det-home-logo').src = match.homeLogo || '';
+        document.getElementById('det-away-logo').src = match.awayLogo || '';
         document.getElementById('det-score').textContent = match.scoreH+' - '+match.scoreA;
         document.getElementById('det-score').style.color = color;
         const statusEl = document.getElementById('det-status');
