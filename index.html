@@ -1,516 +1,1153 @@
 <!doctype html>
 <html lang="it">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
-<meta name="theme-color" content="#000000">
-<title>HUD Global Live Scores</title>
-<style>
-  :root {
-    --bg: #000000;
-    --text: #ffffff;
-    --dim: #777777;
-    --calcio: #39ff14;
-    --basket: #ff7b00;
-    --tennis: #e1ff00;
-    --live: #ff3b3b;
-    --card-bg: #111111;
-  }
-  
-  * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-  
-  body, html {
-    height: 100%; background: var(--bg); color: var(--text);
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    overflow: hidden; touch-action: none; 
-  }
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
+    <meta name="theme-color" content="#0a0f1a">
+    <title>LiveScore Pro</title>
+    <style>
+        :root {
+            --bg: #0a0f1a;
+            --surface: #111827;
+            --surface2: #1a2236;
+            --text: #e2e8f0;
+            --text2: #94a3b8;
+            --text3: #64748b;
+            --accent-calcio: #22c55e;
+            --accent-basket: #f97316;
+            --accent-tennis: #eab308;
+            --live-red: #ef4444;
+            --card-yellow: #eab308;
+            --card-red: #ef4444;
+            --border: #1e293b;
+            --radius: 14px;
+            --radius-sm: 10px;
+            --shadow: 0 2px 12px rgba(0, 0, 0, 0.4);
+        }
 
-  #header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 10px 15px; border-bottom: 2px solid var(--dim);
-    font-size: 14px; font-weight: bold; background: #000; z-index: 10;
-  }
-  
-  .header-left { display: flex; align-items: center; gap: 10px; }
+        * {
+            box-sizing: border-box;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+            margin: 0;
+            padding: 0;
+        }
 
-  #btn-home {
-    display: none; 
-    background: #333; color: #fff; border: none; padding: 4px 10px;
-    border-radius: 8px; font-size: 12px; font-weight: bold; cursor: pointer;
-  }
-  #btn-home.active { display: block; }
-  
-  #sport-title { font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
-  
-  #date-picker {
-    background: transparent; color: var(--text);
-    border: 1px solid var(--dim); padding: 5px 8px;
-    border-radius: 6px; font-family: inherit; font-size: 13px;
-    color-scheme: dark; outline: none; cursor: pointer;
-  }
+        body,
+        html {
+            height: 100%;
+            background: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            overflow: hidden;
+            touch-action: none;
+        }
 
-  #main-view {
-    height: calc(100% - 45px); width: 100%; position: relative;
-  }
+        /* --- HEADER --- */
+        #header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--surface);
+            border-bottom: 1px solid var(--border);
+            z-index: 20;
+            position: relative;
+            gap: 8px;
+        }
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            min-width: 0;
+        }
+        #btn-home {
+            display: none;
+            background: var(--surface2);
+            color: #fff;
+            border: none;
+            padding: 7px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        #btn-home.active {
+            display: block;
+        }
+        #btn-home:active {
+            background: #334155;
+            transform: scale(0.96);
+        }
+        #sport-title {
+            font-size: 16px;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            white-space: nowrap;
+        }
+        #date-picker {
+            background: var(--surface2);
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 7px 10px;
+            border-radius: 20px;
+            font-family: inherit;
+            font-size: 13px;
+            color-scheme: dark;
+            outline: none;
+            cursor: pointer;
+            font-weight: 600;
+            min-width: 0;
+        }
 
-  #matches-list {
-    height: 100%; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;
-    padding-bottom: 30px;
-  }
-  #matches-list::-webkit-scrollbar { display: none; }
+        /* --- VISTA PRINCIPALE --- */
+        #main-view {
+            height: calc(100% - 48px);
+            width: 100%;
+            position: relative;
+            overflow: hidden;
+        }
 
-  .match-card {
-    background: var(--card-bg); border-radius: 12px; padding: 12px;
-    display: flex; justify-content: space-between; align-items: center;
-    border-left: 4px solid var(--dim); cursor: pointer; transition: transform 0.1s;
-  }
-  .match-card:active { transform: scale(0.98); background: #222; }
+        /* --- LISTA PARTITE --- */
+        #matches-list {
+            height: 100%;
+            overflow-y: auto;
+            padding: 10px 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            padding-bottom: 40px;
+        }
+        #matches-list::-webkit-scrollbar {
+            display: none;
+        }
 
-  .team-info { display: flex; flex-direction: column; gap: 4px; font-size: 16px; font-weight: 600; }
-  .league-tag { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
-  
-  .score-info { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
-  .score { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
-  .status.live { color: var(--live); animation: blink 1.5s infinite; font-size: 12px; font-weight: bold; }
-  .status.finished { color: var(--dim); font-size: 12px; }
-  .start-time { font-size: 10px; color: var(--dim); margin-top: 4px; }
+        .section-banner {
+            background: var(--surface2);
+            border-radius: var(--radius-sm);
+            padding: 10px 14px;
+            text-align: center;
+            font-size: 11px;
+            color: var(--text2);
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            border: 1px dashed var(--border);
+            margin-bottom: 4px;
+        }
+        .section-banner span {
+            color: var(--accent-calcio);
+            font-weight: 700;
+        }
 
-  #match-detail {
-    display: none; height: 100%; overflow-y: auto; padding: 15px; background: var(--bg);
-    padding-bottom: 40px;
-  }
-  #match-detail.active { display: block; }
-  #match-detail::-webkit-scrollbar { display: none; }
+        .match-card {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 12px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 4px solid transparent;
+            cursor: pointer;
+            transition: all 0.15s;
+            box-shadow: var(--shadow);
+            position: relative;
+            overflow: hidden;
+        }
+        .match-card:active {
+            transform: scale(0.985);
+            background: #1a2338;
+        }
+        .match-card .priority-badge {
+            position: absolute;
+            top: 8px;
+            right: 10px;
+            font-size: 8px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text3);
+            background: var(--surface2);
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+        .team-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.2;
+            min-width: 0;
+            flex: 1;
+        }
+        .league-tag {
+            font-size: 9px;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.6px;
+            font-weight: 600;
+            margin-bottom: 1px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .score-info {
+            text-align: right;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            min-width: 60px;
+            flex-shrink: 0;
+        }
+        .score {
+            font-size: 22px;
+            font-weight: 900;
+            letter-spacing: 1px;
+            font-variant-numeric: tabular-nums;
+            font-family: 'Inter', 'SF Mono', monospace;
+        }
+        .status-badge {
+            font-size: 10px;
+            font-weight: 700;
+            padding: 3px 8px;
+            border-radius: 12px;
+            letter-spacing: 0.4px;
+            margin-top: 2px;
+        }
+        .status-badge.live {
+            color: #fff;
+            background: var(--live-red);
+            animation: pulse-live 1.5s infinite;
+        }
+        .status-badge.finished {
+            color: var(--text3);
+            background: var(--surface2);
+        }
+        .status-badge.upcoming {
+            color: #fbbf24;
+            background: #1e293b;
+        }
+        .start-time {
+            font-size: 10px;
+            color: var(--text3);
+            margin-top: 3px;
+            font-weight: 500;
+        }
 
-  .detail-header { text-align: center; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
-  .detail-score { color: var(--calcio); font-size: 28px; margin: 5px 0; }
-  
-  .lineups-section {
-    display: flex; gap: 15px; margin-bottom: 20px;
-  }
-  .lineup-col {
-    flex: 1; background: var(--card-bg); border-radius: 10px; padding: 10px;
-  }
-  .lineup-title {
-    font-size: 14px; font-weight: bold; margin-bottom: 8px; color: var(--calcio);
-    text-align: center;
-  }
-  .lineup-list {
-    list-style: none; font-size: 12px;
-  }
-  .lineup-list li {
-    padding: 3px 0; display: flex; justify-content: space-between;
-    border-bottom: 1px solid #222;
-  }
-  .pos-tag {
-    color: var(--dim); font-size: 10px; font-weight: bold;
-    width: 25px; display: inline-block;
-  }
-  .subs-label {
-    font-size: 12px; font-weight: bold; margin-top: 10px; color: var(--dim);
-  }
+        @keyframes pulse-live {
+            0%,
+            100% {
+                opacity: 1;
+            }
+            50% {
+                opacity: 0.55;
+            }
+        }
 
-  .timeline { display: flex; flex-direction: column; gap: 8px; }
-  .event { background: var(--card-bg); padding: 8px 12px; border-radius: 8px; font-size: 14px; display: flex; align-items: center; gap: 10px; }
-  .event .icon { font-size: 18px; }
+        /* --- DETTAGLIO PARTITA --- */
+        #match-detail {
+            display: none;
+            height: 100%;
+            overflow-y: auto;
+            padding: 14px;
+            background: var(--bg);
+            padding-bottom: 50px;
+        }
+        #match-detail.active {
+            display: block;
+        }
+        #match-detail::-webkit-scrollbar {
+            display: none;
+        }
 
-  @keyframes blink { 0% { opacity: 1; } 50% { opacity: 0.3; } 100% { opacity: 1; } }
-  
-  #footer { position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 10px; color: var(--dim); background: #000; padding: 4px; border-top: 1px solid #111; z-index: 20; }
-</style>
+        .detail-header {
+            text-align: center;
+            margin-bottom: 16px;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 16px 14px;
+            box-shadow: var(--shadow);
+        }
+        .detail-header .league-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        .detail-header .league-name {
+            font-size: 11px;
+            color: var(--text3);
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            font-weight: 600;
+        }
+        .btn-standings {
+            background: var(--surface2);
+            color: #fff;
+            border: 1px solid var(--border);
+            padding: 5px 10px;
+            border-radius: 14px;
+            font-size: 10px;
+            font-weight: 700;
+            cursor: pointer;
+            letter-spacing: 0.4px;
+            white-space: nowrap;
+            transition: 0.2s;
+        }
+        .btn-standings:active {
+            background: #334155;
+            transform: scale(0.95);
+        }
+        .detail-teams {
+            font-size: 18px;
+            font-weight: 800;
+            margin-top: 6px;
+            letter-spacing: 0.3px;
+        }
+        .detail-score {
+            font-size: 36px;
+            font-weight: 900;
+            margin: 6px 0;
+            letter-spacing: 2px;
+            font-variant-numeric: tabular-nums;
+            font-family: 'Inter', 'SF Mono', monospace;
+        }
+        .detail-status {
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 12px;
+            border-radius: 14px;
+            display: inline-block;
+            letter-spacing: 0.4px;
+        }
+
+        /* --- FORMAZIONI --- */
+        #det-lineups {
+            margin-bottom: 14px;
+        }
+        .lineups-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+        }
+        .lineup-col {
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 10px;
+            box-shadow: var(--shadow);
+        }
+        .lineup-title {
+            font-size: 12px;
+            font-weight: 800;
+            text-align: center;
+            padding-bottom: 8px;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 6px;
+            letter-spacing: 0.3px;
+            color: #fff;
+        }
+        .lineup-list {
+            list-style: none;
+            font-size: 11px;
+        }
+        .lineup-list li {
+            padding: 3px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            min-height: 22px;
+        }
+        .lineup-list li .plyr-name {
+            flex: 1;
+            font-weight: 600;
+            font-size: 11px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .lineup-list li .plyr-badges {
+            display: flex;
+            gap: 3px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        .lineup-list li .pos-tag {
+            color: var(--text3);
+            font-size: 9px;
+            font-weight: 700;
+            background: var(--surface2);
+            padding: 2px 6px;
+            border-radius: 8px;
+            min-width: 26px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+        .badge-card-yellow {
+            font-size: 11px;
+            filter: drop-shadow(0 0 3px #eab308);
+        }
+        .badge-card-red {
+            font-size: 11px;
+            filter: drop-shadow(0 0 3px #ef4444);
+        }
+        .badge-sub {
+            font-size: 10px;
+            opacity: 0.8;
+        }
+        .subs-label {
+            font-size: 10px;
+            font-weight: 700;
+            margin-top: 8px;
+            color: var(--text2);
+            letter-spacing: 0.5px;
+            padding: 4px 0;
+            border-top: 1px solid var(--border);
+        }
+        .sub-detail {
+            font-size: 9px;
+            color: var(--text3);
+            font-weight: 500;
+        }
+
+        /* --- TIMELINE --- */
+        .section-title-timeline {
+            font-size: 11px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text2);
+            margin-bottom: 8px;
+            padding-left: 4px;
+        }
+        .timeline {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+        .event {
+            background: var(--surface);
+            padding: 10px 12px;
+            border-radius: var(--radius-sm);
+            font-size: 13px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            box-shadow: var(--shadow);
+            line-height: 1.3;
+        }
+        .event .ev-icon {
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+        .event .ev-time {
+            font-weight: 800;
+            min-width: 32px;
+            font-size: 12px;
+            flex-shrink: 0;
+            letter-spacing: 0.3px;
+        }
+        .event .ev-text {
+            font-weight: 500;
+            font-size: 12px;
+            line-height: 1.4;
+        }
+
+        /* --- MODALE CLASSIFICA --- */
+        #standings-modal {
+            display: none;
+            position: fixed;
+            inset: 0;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.92);
+            flex-direction: column;
+            padding: 10px;
+        }
+        #standings-modal.active {
+            display: flex;
+        }
+        #standings-modal .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 14px;
+            background: var(--surface);
+            border-radius: var(--radius) var(--radius) 0 0;
+            border-bottom: 1px solid var(--border);
+        }
+        #standings-modal .modal-title {
+            font-weight: 800;
+            font-size: 14px;
+            letter-spacing: 0.5px;
+        }
+        #standings-modal .modal-close {
+            background: var(--surface2);
+            color: #fff;
+            border: none;
+            padding: 6px 14px;
+            border-radius: 16px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.2s;
+        }
+        #standings-modal .modal-close:active {
+            background: #334155;
+            transform: scale(0.95);
+        }
+        #standings-table-wrap {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--surface);
+            border-radius: 0 0 var(--radius) var(--radius);
+            padding: 4px 8px;
+        }
+        #standings-table-wrap::-webkit-scrollbar {
+            display: none;
+        }
+        #standings-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+        }
+        #standings-table th {
+            color: var(--text3);
+            font-weight: 600;
+            padding: 8px 4px;
+            text-align: center;
+            border-bottom: 1px solid var(--border);
+            font-size: 9px;
+            letter-spacing: 0.5px;
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+        }
+        #standings-table th:first-child {
+            text-align: left;
+            padding-left: 8px;
+        }
+        #standings-table td {
+            padding: 7px 4px;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            font-weight: 500;
+        }
+        #standings-table td:first-child {
+            text-align: left;
+            font-weight: 700;
+            padding-left: 8px;
+        }
+        #standings-table .pos-cell {
+            font-weight: 800;
+            width: 24px;
+        }
+
+        /* --- FOOTER --- */
+        #footer {
+            position: fixed;
+            bottom: 0;
+            width: 100%;
+            text-align: center;
+            font-size: 9px;
+            color: var(--text3);
+            background: var(--surface);
+            padding: 5px;
+            border-top: 1px solid var(--border);
+            z-index: 30;
+            letter-spacing: 0.3px;
+        }
+
+        /* Loading */
+        .loading-text {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text3);
+            font-size: 13px;
+            font-weight: 500;
+        }
+    </style>
 </head>
 <body>
 
-<div id="header">
-  <div class="header-left">
-    <button id="btn-home">⬅ HOME</button>
-    <div id="sport-title" style="color: var(--calcio);">CALCIO</div>
-  </div>
-  <input type="date" id="date-picker">
-</div>
-
-<div id="main-view">
-  <div id="matches-list"></div>
-
-  <div id="match-detail">
-    <div class="detail-header">
-      <div id="det-teams">Squadra A - Squadra B</div>
-      <div class="detail-score" id="det-score">0 - 0</div>
-      <div class="status" id="det-status"></div>
-    </div>
-    <!-- Formazioni -->
-    <div id="det-lineups" style="display:none;">
-      <div class="lineups-section" id="lineups-container"></div>
-    </div>
-    <div class="timeline" id="det-timeline"></div>
-  </div>
-</div>
-
-<div id="footer"><b>Swipe:</b> Cambia Sport • <b>Pinch:</b> Dettagli / Home</div>
-
-<script>
-(() => {
-  const datePicker = document.getElementById('date-picker');
-  const today = new Date();
-  datePicker.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-
-  // Priorità campionati (più basso = più importante, mostrato in cima)
-  const leaguePriority = {
-    "uefa.champions": 1,
-    "fifa.world": 2,
-    "uefa.euro": 3,
-    "eng.1": 4,
-    "esp.1": 5,
-    "ita.1": 6,
-    "ger.1": 7,
-    "fra.1": 8,
-    "uefa.europa": 9,
-    "uefa.conference": 10,
-    "uefa.nations": 11,
-    "ned.1": 12,
-    "por.1": 13,
-    "bra.1": 14,
-    "arg.1": 15,
-    "usa.1": 16,
-    "ksa.1": 17
-  };
-
-  const sportConfigs = {
-    "CALCIO": {
-      color: "var(--calcio)",
-      leagues: [
-        "ita.1", "ita.2", "eng.1", "esp.1", "ger.1", "fra.1", 
-        "uefa.champions", "uefa.europa", "uefa.conference", "fifa.world",
-        "uefa.euro", "uefa.nations", "usa.1", "bra.1", "arg.1", "ksa.1", "ned.1", "por.1"
-      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/soccer/${l}/scoreboard`)
-    },
-    "BASKET": {
-      color: "var(--basket)",
-      leagues: [
-        "nba", "wnba", "euroleague", "mens-college-basketball", "fiba.world"
-      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/basketball/${l}/scoreboard`)
-    },
-    "TENNIS": {
-      color: "var(--tennis)",
-      leagues: [
-        "atp", "wta"
-      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/tennis/${l}/scoreboard`)
-    }
-  };
-
-  const sportsList = ["CALCIO", "BASKET", "TENNIS"];
-  let currentSportIndex = 0;
-  let inDetailView = false;
-  let currentMatches = [];
-
-  const matchesListEl = document.getElementById('matches-list');
-  const matchDetailEl = document.getElementById('match-detail');
-  const btnHome = document.getElementById('btn-home');
-  const sportTitleEl = document.getElementById('sport-title');
-
-  datePicker.addEventListener('change', () => loadDataAndRender());
-
-  // Traduzione testo eventi in italiano
-  function translateEventText(text) {
-    if (!text) return '';
-    return text
-      .replace(/\bGoal\b/gi, 'Gol')
-      .replace(/\bYellow card\b/gi, 'Cartellino giallo')
-      .replace(/\bRed card\b/gi, 'Cartellino rosso')
-      .replace(/\bPenalty\b/gi, 'Rigore')
-      .replace(/\bSubstitution\b/gi, 'Sostituzione')
-      .replace(/\bin\b/gi, 'entra')
-      .replace(/\bout\b/gi, 'esce')
-      .replace(/\bInjury\b/gi, 'Infortunio')
-      .replace(/\bOwn goal\b/gi, 'Autogol')
-      .replace(/\bMissed penalty\b/gi, 'Rigore sbagliato');
-  }
-
-  // Mappa posizioni in italiano
-  const positionIT = {
-    "GK": "POR",
-    "DF": "DIF",
-    "MF": "CEN",
-    "FW": "ATT"
-  };
-
-  async function fetchRealData(sportName, dateStr) {
-    const config = sportConfigs[sportName];
-    let allMatches = [];
-    
-    const fetchPromises = config.leagues.map(async (baseUrl) => {
-      try {
-        const leagueSlug = baseUrl.split('/').pop(); // estrae "ita.1" ecc.
-        const fetchUrl = `${baseUrl}?dates=${dateStr}`;
-        const response = await fetch(fetchUrl);
-        if (!response.ok) return [];
-        const data = await response.json();
-        
-        if (data.events) {
-          return data.events.map(event => {
-            const comp = event.competitions[0];
-            const home = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
-            const away = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
-            
-            const leagueName = data.leagues && data.leagues[0] ? (data.leagues[0].abbreviation || data.leagues[0].name) : '';
-
-            return {
-              id: event.id,
-              leagueSlug: leagueSlug,
-              league: leagueName,
-              home: home.team.shortDisplayName || home.team.name,
-              away: away.team.shortDisplayName || away.team.name,
-              scoreH: home.score || '0',
-              scoreA: away.score || '0',
-              status: event.status.type.shortDetail,
-              state: event.status.type.state,
-              isLive: event.status.type.state === 'in',
-              time: new Date(event.date).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'}),
-              summaryUrl: baseUrl.replace('/scoreboard', '/summary?event=' + event.id)
-            };
-          });
-        }
-        return [];
-      } catch (error) {
-        return [];
-      }
-    });
-
-    const results = await Promise.all(fetchPromises);
-    results.forEach(matches => { allMatches = allMatches.concat(matches); });
-
-    // Ordinamento: priorità campionato → live → pre/post → orario
-    allMatches.sort((a, b) => {
-      const priorityA = leaguePriority[a.leagueSlug] ?? 100;
-      const priorityB = leaguePriority[b.leagueSlug] ?? 100;
-      if (priorityA !== priorityB) return priorityA - priorityB;
-      if (a.isLive && !b.isLive) return -1;
-      if (!a.isLive && b.isLive) return 1;
-      if (a.state === 'pre' && b.state === 'post') return -1;
-      if (a.state === 'post' && b.state === 'pre') return 1;
-      // A parità di stato, ordine cronologico (pre: ora crescente, post: ora decrescente)
-      const timeA = a.time ? a.time : '00:00';
-      const timeB = b.time ? b.time : '00:00';
-      if (a.state === 'pre') return timeA.localeCompare(timeB);
-      if (a.state === 'post') return timeB.localeCompare(timeA);
-      return 0;
-    });
-
-    return allMatches;
-  }
-
-  async function loadDataAndRender() {
-    inDetailView = false;
-    matchDetailEl.classList.remove('active');
-    btnHome.classList.remove('active');
-    matchesListEl.style.display = 'flex';
-    
-    const sportName = sportsList[currentSportIndex];
-    const config = sportConfigs[sportName];
-    const espnDate = datePicker.value.replace(/-/g, '');
-    
-    sportTitleEl.textContent = sportName;
-    sportTitleEl.style.color = config.color;
-    document.getElementById('header').style.borderColor = config.color;
-    
-    matchesListEl.innerHTML = '<div style="text-align:center; padding:30px;">Aggiornamento dati mondiali...<br><span style="font-size:10px;color:gray;">Connessione ai server sportivi</span></div>';
-    
-    currentMatches = await fetchRealData(sportName, espnDate);
-    
-    matchesListEl.innerHTML = '';
-    
-    if (currentMatches.length === 0) {
-       matchesListEl.innerHTML = '<div style="text-align:center; padding:30px; color:gray;">Nessuna partita rilevante per la data selezionata.</div>';
-       return;
-    }
-    
-    currentMatches.forEach(match => {
-      const card = document.createElement('div');
-      card.className = 'match-card';
-      card.dataset.id = match.id;
-      card.style.borderLeftColor = config.color;
-      
-      const statusClass = match.isLive ? 'status live' : 'status finished';
-
-      card.innerHTML = `
-        <div class="team-info">
-          <span class="league-tag">${match.league}</span>
-          <span>${match.home}</span>
-          <span>${match.away}</span>
+    <div id="header">
+        <div class="header-left">
+            <button id="btn-home">⬅ HOME</button>
+            <div id="sport-title">CALCIO</div>
         </div>
-        <div class="score-info">
-          <span class="score">${match.scoreH} - ${match.scoreA}</span>
-          <span class="${statusClass}">${match.status}</span>
-          <span class="start-time">${match.state === 'pre' ? 'Ore: ' + match.time : 'Inizio: ' + match.time}</span>
-        </div>
-      `;
-      
-      matchesListEl.appendChild(card);
-    });
-  }
+        <input type="date" id="date-picker">
+    </div>
 
-  async function openDetail(match) {
-    inDetailView = true;
-    matchesListEl.style.display = 'none';
-    matchDetailEl.classList.add('active');
-    btnHome.classList.add('active');
-
-    const config = sportConfigs[sportsList[currentSportIndex]];
-    const color = config.color;
-
-    document.getElementById('det-teams').innerHTML = `<span style="font-size:12px; color:gray;">${match.league}</span><br>${match.home} - ${match.away}`;
-    document.getElementById('det-score').textContent = `${match.scoreH} - ${match.scoreA}`;
-    document.getElementById('det-score').style.color = color;
-    
-    const statusEl = document.getElementById('det-status');
-    statusEl.textContent = match.status;
-    statusEl.className = match.isLive ? 'status live' : 'status finished';
-
-    const timelineEl = document.getElementById('det-timeline');
-    const lineupsContainer = document.getElementById('lineups-container');
-    const detLineups = document.getElementById('det-lineups');
-    detLineups.style.display = 'none';
-    timelineEl.innerHTML = '<div style="text-align:center; padding: 30px;">Scaricamento dati...</div>';
-
-    try {
-      const res = await fetch(match.summaryUrl);
-      const summaryData = await res.json();
-      
-      timelineEl.innerHTML = '';
-
-      // --- Estrazione formazioni ---
-      const competitors = summaryData?.gamepackage?.competition?.competitors;
-      if (competitors && competitors.length === 2) {
-        let homeComp = competitors.find(c => c.homeAway === 'home');
-        let awayComp = competitors.find(c => c.homeAway === 'away');
-        if (!homeComp || !awayComp) {
-          // fallback
-          homeComp = competitors[0];
-          awayComp = competitors[1];
-        }
-
-        const buildLineupHTML = (teamComp) => {
-          const roster = teamComp.roster?.entries || [];
-          const starters = roster.filter(p => p.starter).sort((a,b) => (a.order || 0) - (b.order || 0));
-          const subs = roster.filter(p => !p.starter);
-
-          const name = teamComp.team.shortDisplayName || teamComp.team.name;
-          let html = `<div class="lineup-col">
-            <div class="lineup-title">${name}</div>
-            <ul class="lineup-list">`;
-          starters.forEach(p => {
-            const posAbb = p.position?.abbreviation || '';
-            const posIT = positionIT[posAbb] || posAbb;
-            html += `<li><span>${p.athlete?.shortName || p.athlete?.displayName || 'N/A'}</span><span class="pos-tag">${posIT}</span></li>`;
-          });
-          html += `</ul>`;
-          if (subs.length > 0) {
-            html += `<div class="subs-label">Panchina</div><ul class="lineup-list">`;
-            subs.forEach(p => {
-              html += `<li>${p.athlete?.shortName || p.athlete?.displayName || 'N/A'}</li>`;
-            });
-            html += `</ul>`;
-          }
-          html += `</div>`;
-          return html;
-        };
-
-        lineupsContainer.innerHTML = buildLineupHTML(homeComp) + buildLineupHTML(awayComp);
-        detLineups.style.display = 'block';
-      } else {
-        detLineups.style.display = 'none';
-      }
-
-      // --- Eventi chiave tradotti ---
-      if (summaryData.keyEvents && summaryData.keyEvents.length > 0) {
-        summaryData.keyEvents.forEach(ev => {
-          let icon = '⏱️';
-          if (ev.type && ev.type.text) {
-            const t = ev.type.text.toLowerCase();
-            if (t.includes('goal')) icon = '⚽';
-            else if (t.includes('yellow')) icon = '🟨';
-            else if (t.includes('red')) icon = '🟥';
-            else if (t.includes('penalty')) icon = '❌';
-            else if (t.includes('substitution')) icon = '🔄';
-            else if (t.includes('injury')) icon = '🩹';
-          }
-          const rawText = ev.text || ev.shortText || 'Evento non specificato';
-          const itaText = translateEventText(rawText);
-          
-          timelineEl.innerHTML += `
-            <div class="event">
-              <span style="font-weight:bold; color:${color}; min-width:40px;">${ev.clock ? ev.clock.displayValue : ''}</span>
-              <span class="icon">${icon}</span>
-              <span>${itaText}</span>
+    <div id="main-view">
+        <div id="matches-list"></div>
+        <div id="match-detail">
+            <div class="detail-header">
+                <div class="league-row">
+                    <span class="league-name" id="det-league"></span>
+                    <button class="btn-standings" id="btn-standings">📊 CLASSIFICA</button>
+                </div>
+                <div class="detail-teams" id="det-teams">Squadra A - Squadra B</div>
+                <div class="detail-score" id="det-score">0 - 0</div>
+                <span class="detail-status" id="det-status"></span>
             </div>
-          `;
-        });
-      } else {
-        timelineEl.innerHTML = '<div style="text-align:center; color:gray; font-size:12px; margin-top:20px;">Nessun evento disponibile.</div>';
-      }
-    } catch(e) {
-      timelineEl.innerHTML = '<div style="text-align:center; color:red; font-size:12px; margin-top:20px;">Errore di connessione al server eventi.</div>';
-    }
-  }
+            <div id="det-lineups" style="display:none;">
+                <div class="lineups-grid" id="lineups-container"></div>
+            </div>
+            <div class="section-title-timeline">📋 MOMENTI SALIENTI</div>
+            <div class="timeline" id="det-timeline"></div>
+        </div>
+    </div>
 
-  // --- GESTURE E TASTIERA ---
-  let touchStartX = 0;
-  let touchStartY = 0;
+    <!-- MODALE CLASSIFICA -->
+    <div id="standings-modal">
+        <div class="modal-header">
+            <span class="modal-title" id="standings-title">Classifica</span>
+            <button class="modal-close" id="standings-close">✕ CHIUDI</button>
+        </div>
+        <div id="standings-table-wrap">
+            <table id="standings-table"></table>
+        </div>
+    </div>
 
-  document.addEventListener('pointerdown', e => {
-    touchStartX = e.clientX;
-    touchStartY = e.clientY;
-  });
+    <div id="footer"><b>← Swipe →</b> Sport &nbsp;|&nbsp; <b>Tocca</b> Dettaglio &nbsp;|&nbsp; <b>⬅ Home</b> Torna indietro</div>
 
-  document.addEventListener('pointerup', e => {
-    if (e.target.id === 'date-picker') return;
+    <script>
+        (() => {
+            const datePicker = document.getElementById('date-picker');
+            const today = new Date();
+            datePicker.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
-    const touchEndX = e.clientX;
-    const touchEndY = e.clientY;
-    const diffX = touchEndX - touchStartX;
-    const diffY = Math.abs(touchEndY - touchStartY);
+            // Priorità campionati (numero più basso = più in alto)
+            const leaguePriority = {
+                "uefa.champions": 1,
+                "fifa.world": 2,
+                "uefa.euro": 3,
+                "eng.1": 4,
+                "esp.1": 5,
+                "ita.1": 6,
+                "ger.1": 7,
+                "fra.1": 8,
+                "uefa.europa": 9,
+                "uefa.conference": 10,
+                "uefa.nations": 11,
+                "ned.1": 12,
+                "por.1": 13,
+                "bra.1": 14,
+                "arg.1": 15,
+                "usa.1": 16,
+                "ksa.1": 17
+            };
 
-    if (Math.abs(diffX) < 20 && diffY < 20) {
-      if (e.target.closest('#btn-home') && inDetailView) {
-        loadDataAndRender();
-        return;
-      }
-      const card = e.target.closest('.match-card');
-      if (card && !inDetailView) {
-        const matchId = card.dataset.id;
-        const match = currentMatches.find(m => m.id === matchId);
-        if(match) openDetail(match);
-      }
-      return;
-    }
+            const sportConfigs = {
+                "CALCIO": {
+                    color: "var(--accent-calcio)",
+                    leagues: [
+                        "ita.1", "ita.2", "eng.1", "esp.1", "ger.1", "fra.1",
+                        "uefa.champions", "uefa.europa", "uefa.conference", "fifa.world",
+                        "uefa.euro", "uefa.nations", "usa.1", "bra.1", "arg.1", "ksa.1", "ned.1", "por.1"
+                    ].map(l => `https://site.api.espn.com/apis/site/v2/sports/soccer/${l}/scoreboard`)
+                },
+                "BASKET": {
+                    color: "var(--accent-basket)",
+                    leagues: [
+                        "nba", "wnba", "euroleague", "mens-college-basketball", "fiba.world"
+                    ].map(l => `https://site.api.espn.com/apis/site/v2/sports/basketball/${l}/scoreboard`)
+                },
+                "TENNIS": {
+                    color: "var(--accent-tennis)",
+                    leagues: [
+                        "atp", "wta"
+                    ].map(l => `https://site.api.espn.com/apis/site/v2/sports/tennis/${l}/scoreboard`)
+                }
+            };
 
-    if (inDetailView) return;
+            const sportsList = ["CALCIO", "BASKET", "TENNIS"];
+            let currentSportIndex = 0;
+            let inDetailView = false;
+            let currentMatches = [];
+            let currentDetailMatch = null;
 
-    if (diffX > 60) {
-      currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1;
-      loadDataAndRender();
-    } else if (diffX < -60) {
-      currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex + 1;
-      loadDataAndRender();
-    }
-  });
+            const matchesListEl = document.getElementById('matches-list');
+            const matchDetailEl = document.getElementById('match-detail');
+            const btnHome = document.getElementById('btn-home');
+            const sportTitleEl = document.getElementById('sport-title');
+            const standingsModal = document.getElementById('standings-modal');
+            const standingsClose = document.getElementById('standings-close');
+            const standingsTable = document.getElementById('standings-table');
+            const standingsTitle = document.getElementById('standings-title');
+            const btnStandings = document.getElementById('btn-standings');
 
-  window.addEventListener('keydown', (e) => {
-    if (inDetailView && e.key === 'Backspace') loadDataAndRender();
-    if (!inDetailView) {
-      if (e.key === 'ArrowRight') {
-        currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex + 1;
-        loadDataAndRender();
-      }
-      if (e.key === 'ArrowLeft') {
-        currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1;
-        loadDataAndRender();
-      }
-    }
-  });
+            // Mappa posizioni in italiano
+            const positionIT = { "GK": "POR", "DF": "DIF", "MF": "CEN", "FW": "ATT" };
 
-  loadDataAndRender();
-})();
-</script>
+            // Traduzione eventi
+            function translateEventText(text) {
+                if (!text) return '';
+                return text
+                    .replace(/\bGoal\b/gi, 'Gol')
+                    .replace(/\bYellow card\b/gi, 'Cartellino giallo')
+                    .replace(/\bRed card\b/gi, 'Cartellino rosso')
+                    .replace(/\bPenalty\b/gi, 'Rigore')
+                    .replace(/\bSubstitution\b/gi, 'Sostituzione')
+                    .replace(/\bin\b/gi, 'entra')
+                    .replace(/\bout\b/gi, 'esce')
+                    .replace(/\bInjury\b/gi, 'Infortunio')
+                    .replace(/\bOwn goal\b/gi, 'Autogol')
+                    .replace(/\bMissed penalty\b/gi, 'Rigore sbagliato')
+                    .replace(/\bAssist\b/gi, 'Assist')
+                    .replace(/\bVAR\b/gi, 'VAR');
+            }
+
+            datePicker.addEventListener('change', () => loadDataAndRender());
+            btnHome.addEventListener('click', () => loadDataAndRender());
+            standingsClose.addEventListener('click', () => standingsModal.classList.remove('active'));
+            btnStandings.addEventListener('click', () => {
+                if (currentDetailMatch) openStandings(currentDetailMatch.leagueSlug, currentDetailMatch
+                    .league);
+            });
+
+            // Chiudi modale con tap fuori
+            standingsModal.addEventListener('pointerdown', (e) => {
+                if (e.target === standingsModal) standingsModal.classList.remove('active');
+            });
+
+            // --- FETCH PARTITE ---
+            async function fetchRealData(sportName, dateStr) {
+                const config = sportConfigs[sportName];
+                let allMatches = [];
+                const fetchPromises = config.leagues.map(async (baseUrl) => {
+                    try {
+                        const leagueSlug = baseUrl.split('/').pop();
+                        const fetchUrl = `${baseUrl}?dates=${dateStr}`;
+                        const response = await fetch(fetchUrl);
+                        if (!response.ok) return [];
+                        const data = await response.json();
+                        if (data.events) {
+                            return data.events.map(event => {
+                                const comp = event.competitions[0];
+                                const home = comp.competitors.find(c => c.homeAway === 'home') || comp
+                                    .competitors[0];
+                                const away = comp.competitors.find(c => c.homeAway === 'away') || comp
+                                    .competitors[1];
+                                const leagueName = data.leagues && data.leagues[0] ? (data.leagues[0]
+                                    .abbreviation || data.leagues[0].name) : '';
+                                return {
+                                    id: event.id,
+                                    leagueSlug: leagueSlug,
+                                    league: leagueName,
+                                    home: home?.team?.shortDisplayName || home?.team?.name || '???',
+                                    away: away?.team?.shortDisplayName || away?.team?.name || '???',
+                                    scoreH: home?.score ?? '0',
+                                    scoreA: away?.score ?? '0',
+                                    status: event.status.type.shortDetail || '',
+                                    state: event.status.type.state,
+                                    isLive: event.status.type.state === 'in',
+                                    time: new Date(event.date).toLocaleTimeString('it-IT', { hour: '2-digit',
+                                        minute: '2-digit' }),
+                                    summaryUrl: baseUrl.replace('/scoreboard', '/summary?event=' + event.id)
+                                };
+                            });
+                        }
+                        return [];
+                    } catch (error) {
+                        return [];
+                    }
+                });
+                const results = await Promise.all(fetchPromises);
+                results.forEach(matches => { allMatches = allMatches.concat(matches); });
+                // Ordinamento
+                allMatches.sort((a, b) => {
+                    const pA = leaguePriority[a.leagueSlug] ?? 100;
+                    const pB = leaguePriority[b.leagueSlug] ?? 100;
+                    if (pA !== pB) return pA - pB;
+                    if (a.isLive && !b.isLive) return -1;
+                    if (!a.isLive && b.isLive) return 1;
+                    if (a.state === 'pre' && b.state === 'post') return -1;
+                    if (a.state === 'post' && b.state === 'pre') return 1;
+                    const tA = a.time || '00:00';
+                    const tB = b.time || '00:00';
+                    if (a.state === 'pre') return tA.localeCompare(tB);
+                    if (a.state === 'post') return tB.localeCompare(tA);
+                    return 0;
+                });
+                return allMatches;
+            }
+
+            // --- CERCA GIORNI PRECEDENTI ---
+            async function searchPreviousDays(sportName, startDateStr, maxDays = 7) {
+                const startDate = new Date(
+                    parseInt(startDateStr.substring(0, 4)),
+                    parseInt(startDateStr.substring(4, 6)) - 1,
+                    parseInt(startDateStr.substring(6, 8))
+                );
+                for (let i = 1; i <= maxDays; i++) {
+                    const d = new Date(startDate);
+                    d.setDate(d.getDate() - i);
+                    const y = d.getFullYear();
+                    const m = String(d.getMonth() + 1).padStart(2, '0');
+                    const day = String(d.getDate()).padStart(2, '0');
+                    const dateStr = `${y}${m}${day}`;
+                    const matches = await fetchRealData(sportName, dateStr);
+                    if (matches.length > 0) {
+                        return { matches, dateStr, dateFormatted: `${day}/${m}/${y}` };
+                    }
+                }
+                return null;
+            }
+
+            // --- LOAD DATA ---
+            async function loadDataAndRender() {
+                inDetailView = false;
+                matchDetailEl.classList.remove('active');
+                btnHome.classList.remove('active');
+                matchesListEl.style.display = 'flex';
+                const sportName = sportsList[currentSportIndex];
+                const config = sportConfigs[sportName];
+                const espnDate = datePicker.value.replace(/-/g, '');
+                sportTitleEl.textContent = sportName;
+                sportTitleEl.style.color = config.color;
+                document.getElementById('header').style.borderColor = 'var(--border)';
+                matchesListEl.innerHTML =
+                    '<div class="loading-text">📡 Aggiornamento dati mondiali...<br><span style="font-size:10px;color:var(--text3);">Connessione ai server sportivi</span></div>';
+
+                currentMatches = await fetchRealData(sportName, espnDate);
+                let bannerHTML = '';
+
+                if (currentMatches.length === 0) {
+                    const prevData = await searchPreviousDays(sportName, espnDate, 7);
+                    if (prevData && prevData.matches.length > 0) {
+                        currentMatches = prevData.matches;
+                        bannerHTML = `
+                            <div class="section-banner">
+                                📅 Nessuna partita per la data selezionata.<br>
+                                <span>Ultime partite – ${prevData.dateFormatted}</span>
+                            </div>`;
+                    }
+                }
+
+                matchesListEl.innerHTML = '';
+                if (bannerHTML) matchesListEl.innerHTML = bannerHTML;
+
+                if (currentMatches.length === 0 && !bannerHTML) {
+                    matchesListEl.innerHTML +=
+                        '<div class="loading-text" style="color:var(--text3);">😕 Nessuna partita rilevante per la data selezionata.<br><span style="font-size:10px;">Prova a selezionare un\'altra data.</span></div>';
+                    return;
+                }
+                if (currentMatches.length === 0 && bannerHTML) {
+                    matchesListEl.innerHTML +=
+                        '<div class="loading-text" style="color:var(--text3);">😕 Nessuna partita trovata neanche nei 7 giorni precedenti.</div>';
+                    return;
+                }
+
+                currentMatches.forEach(match => {
+                    const card = document.createElement('div');
+                    card.className = 'match-card';
+                    card.dataset.id = match.id;
+                    card.style.borderLeftColor = config.color;
+                    let statusClass = 'finished';
+                    if (match.isLive) statusClass = 'live';
+                    else if (match.state === 'pre') statusClass = 'upcoming';
+                    card.innerHTML = `
+                        <div class="team-info">
+                            <span class="league-tag">🏆 ${match.league}</span>
+                            <span>${match.home}</span>
+                            <span>${match.away}</span>
+                        </div>
+                        <div class="score-info">
+                            <span class="score">${match.scoreH} - ${match.scoreA}</span>
+                            <span class="status-badge ${statusClass}">${match.status}</span>
+                            <span class="start-time">${match.state==='pre'?'🕐 ':'⏱️ '}${match.time}</span>
+                        </div>`;
+                    matchesListEl.appendChild(card);
+                });
+            }
+
+            // --- DETTAGLIO PARTITA ---
+            async function openDetail(match) {
+                currentDetailMatch = match;
+                inDetailView = true;
+                matchesListEl.style.display = 'none';
+                matchDetailEl.classList.add('active');
+                btnHome.classList.add('active');
+                const config = sportConfigs[sportsList[currentSportIndex]];
+                const color = config.color;
+                document.getElementById('det-league').textContent = '🏆 ' + match.league;
+                document.getElementById('det-teams').textContent = match.home + ' - ' + match.away;
+                document.getElementById('det-score').textContent = match.scoreH + ' - ' + match.scoreA;
+                document.getElementById('det-score').style.color = color;
+                const statusEl = document.getElementById('det-status');
+                statusEl.textContent = match.status;
+                statusEl.style.color = match.isLive ? '#fff' : 'var(--text3)';
+                statusEl.style.background = match.isLive ? 'var(--live-red)' : 'var(--surface2)';
+                const timelineEl = document.getElementById('det-timeline');
+                const lineupsContainer = document.getElementById('lineups-container');
+                const detLineups = document.getElementById('det-lineups');
+                detLineups.style.display = 'none';
+                timelineEl.innerHTML =
+                    '<div class="loading-text">📡 Scaricamento dati partita...</div>';
+
+                try {
+                    const res = await fetch(match.summaryUrl);
+                    const summaryData = await res.json();
+                    timelineEl.innerHTML = '';
+                    const competitors = summaryData?.gamepackage?.competition?.competitors;
+                    let allKeyEvents = summaryData?.keyEvents || [];
+                    // Mappa eventi per giocatore (cartellini, sostituzioni)
+                    const playerCards = {}; // key: nome giocatore (lowercase) -> 'yellow'|'red'
+                    const playerSubs = {}; // key: nome giocatore uscito -> nome entrato
+                    const subInDetails = {}; // key: nome entrato -> nome uscito
+
+                    allKeyEvents.forEach(ev => {
+                        const t = (ev.type?.text || '').toLowerCase();
+                        const rawName = ev.text || ev.shortText || '';
+                        if (t.includes('yellow')) {
+                            const name = extractPlayerName(rawName);
+                            if (name && !playerCards[name]) playerCards[name] = 'yellow';
+                        } else if (t.includes('red')) {
+                            const name = extractPlayerName(rawName);
+                            if (name) playerCards[name] = 'red';
+                        } else if (t.includes('substitution')) {
+                            const { outName, inName } = extractSubNames(rawName);
+                            if (outName && inName) {
+                                playerSubs[outName] = inName;
+                                subInDetails[inName] = outName;
+                            }
+                        }
+                    });
+
+                    // Formazioni
+                    if (competitors && competitors.length === 2) {
+                        let hc = competitors.find(c => c.homeAway === 'home') || competitors[0];
+                        let ac = competitors.find(c => c.homeAway === 'away') || competitors[1];
+                        const buildLineupHTML = (teamComp, isHome) => {
+                            const roster = teamComp.roster?.entries || [];
+                            const starters = roster.filter(p => p.starter).sort((a, b) => (a.order || 0) - (
+                                b.order || 0));
+                            const subs = roster.filter(p => !p.starter);
+                            const name = teamComp.team?.shortDisplayName || teamComp.team?.name || '???';
+                            let html = `<div class="lineup-col"><div class="lineup-title">${name}</div><ul class="lineup-list">`;
+                            starters.forEach(p => {
+                                const pName = p.athlete?.shortName || p.athlete?.displayName ||
+                                    'N/A';
+                                const pNameLower = pName.toLowerCase();
+                                const posAbb = p.position?.abbreviation || '';
+                                const posIT = positionIT[posAbb] || posAbb;
+                                let badges = '';
+                                if (playerCards[pNameLower] === 'yellow') badges +=
+                                    '<span class="badge-card-yellow">🟨</span>';
+                                if (playerCards[pNameLower] === 'red') badges +=
+                                    '<span class="badge-card-red">🟥</span>';
+                                if (playerSubs[pNameLower]) badges +=
+                                    `<span class="badge-sub" title="Sostituito da ${playerSubs[pNameLower]}">🔄</span>`;
+                                html +=
+                                    `<li><span class="plyr-name">${pName}</span><span class="plyr-badges">${badges}<span class="pos-tag">${posIT}</span></span></li>`;
+                            });
+                            html += `</ul>`;
+                            if (subs.length > 0) {
+                                html += `<div class="subs-label">🪑 Panchina</div><ul class="lineup-list">`;
+                                subs.forEach(p => {
+                                    const pName = p.athlete?.shortName || p.athlete?.displayName ||
+                                        'N/A';
+                                    const pNameLower = pName.toLowerCase();
+                                    let subInfo = '';
+                                    if (subInDetails[pNameLower]) subInfo =
+                                        ` <span class="sub-detail">per ${subInDetails[pNameLower]}</span>`;
+                                    let badges = '';
+                                    if (playerCards[pNameLower] === 'yellow') badges +=
+                                        '<span class="badge-card-yellow">🟨</span>';
+                                    if (playerCards[pNameLower] === 'red') badges +=
+                                        '<span class="badge-card-red">🟥</span>';
+                                    html +=
+                                        `<li><span class="plyr-name">${pName}${subInfo}</span><span class="plyr-badges">${badges}</span></li>`;
+                                });
+                                html += `</ul>`;
+                            }
+                            html += `</div>`;
+                            return html;
+                        };
+                        lineupsContainer.innerHTML = buildLineupHTML(hc, true) + buildLineupHTML(ac, false);
+                        detLineups.style.display = 'block';
+                    } else {
+                        detLineups.style.display = 'none';
+                    }
+
+                    // Timeline: SOLO eventi importanti (goal, rigori, cartellini, infortuni, assist)
+                    const importantTypes = ['goal', 'yellow', 'red', 'penalty', 'injury', 'assist', 'var',
+                        'own goal', 'missed penalty'
+                    ];
+                    const filteredEvents = allKeyEvents.filter(ev => {
+                        const t = (ev.type?.text || '').toLowerCase();
+                        return importantTypes.some(k => t.includes(k));
+                    });
+
+                    if (filteredEvents.length > 0) {
+                        filteredEvents.forEach(ev => {
+                            let icon = '⏱️';
+                            const t = (ev.type?.text || '').toLowerCase();
+                            if (t.includes('goal') && !t.includes('own')) icon = '⚽';
+                            else if (t.includes('own goal')) icon = '🥅';
+                            else if (t.includes('yellow')) icon = '🟨';
+                            else if (t.includes('red')) icon = '🟥';
+                            else if (t.includes('penalty') && t.includes('missed')) icon = '❌';
+                            else if (t.includes('penalty')) icon = '🎯';
+                            else if (t.includes('injury')) icon = '🩹';
+                            else if (t.includes('assist')) icon = '👟';
+                            else if (t.includes('var')) icon = '📺';
+                            const rawText = ev.text || ev.shortText || 'Evento';
+                            const itaText = translateEventText(rawText);
+                            const clockVal = ev.clock?.displayValue || '';
+                            timelineEl.innerHTML += `
+                                <div class="event">
+                                    <span class="ev-time" style="color:${color}">${clockVal}</span>
+                                    <span class="ev-icon">${icon}</span>
+                                    <span class="ev-text">${itaText}</span>
+                                </div>`;
+                        });
+                    } else {
+                        timelineEl.innerHTML =
+                            '<div class="loading-text" style="color:var(--text3);">📋 Nessun evento saliente disponibile.</div>';
+                    }
+                } catch (e) {
+                    timelineEl.innerHTML =
+                        '<div class="loading-text" style="color:#ef4444;">⚠️ Errore di connessione al server eventi.</div>';
+                }
+            }
+
+            function extractPlayerName(text) {
+                if (!text) return null;
+                // Prende la prima parte prima di virgola o trattino, pulita
+                const cleaned = text.split(',')[0].split(' - ')[0].replace(/\(.*?\)/g, '').trim();
+                const parts = cleaned.split(' ');
+                if (parts.length >= 2) return parts.slice(0, 2).join(' ').toLowerCase();
+                return cleaned.toLowerCase();
+            }
+
+            function extractSubNames(text) {
+                if (!text) return { outName: null, inName: null };
+                const cleaned = text.replace(/\(.*?\)/g, '').trim();
+                const parts = cleaned.split(/ - |, |: /);
+                let outName = null,
+                    inName = null;
+                for (let p of parts) {
+                    const lower = p.toLowerCase();
+                    if (lower.includes('entra') || lower.includes('in')) {
+                        inName = p.replace(/entra|in/gi, '').trim();
+                    } else if (lower.includes('esce') || lower.includes('out')) {
+                        outName = p.replace(/esce|out/gi, '').trim();
+                    }
+                }
+                if (!outName && !inName && parts.length >= 2) {
+                    outName = parts[0].trim();
+                    inName = parts[parts.length - 1].trim();
+                }
+                return {
+                    outName: outName ? outName.toLowerCase() : null,
+                    inName: inName ? inName.toLowerCase() : null
+                };
+            }
+
+            // --- CLASSIFICA ---
+            async function openStandings(leagueSlug, leagueName) {
+                standingsTitle.textContent = '📊 ' + (leagueName || leagueSlug);
+                standingsTable.innerHTML =
+                    '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
+                standingsModal.classList.add('active');
+                try {
+                    const standingsUrl =
+                        `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings`;
+                    const res = await fetch(standingsUrl);
+                    const data = await res.json();
+                    const entries = data?.standings?.entries || [];
+                    if (entries.length === 0) {
+                        standingsTable.innerHTML =
+                            '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica non disponibile.</td></tr>';
+                        return;
+                    }
+                    let html =
+                        `<thead><tr><th>#</th><th>Squadra</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>GF:GS</th><th>Pt</th></tr></thead><tbody>`;
+                    entries.forEach((entry, idx) => {
+                        const teamName = entry.team?.shortDisplayName || entry.team?.name || '???';
+                        const stats = entry.stats || [];
+                        const getStat = (name) => {
+                            const s = stats.find(s => s.name === name);
+                            return s ? s.value : '-';
+                        };
+                        const gp = getStat('gamesPlayed');
+                        const wins = getStat('wins');
+                        const draws = getStat('ties');
+                        const losses = getStat('losses');
+                        const gf = getStat('pointsFor');
+                        const ga = getStat('pointsAgainst');
+                        const pts = getStat('points');
+                        html += `<tr>
+                            <td class="pos-cell">${idx+1}</td>
+                            <td>${teamName}</td>
+                            <td>${gp}</td><td>${wins}</td><td>${draws}</td><td>${losses}</td>
+                            <td>${gf}:${ga}</td><td style="font-weight:800;">${pts}</td>
+                        </tr>`;
+                    });
+                    html += '</tbody>';
+                    standingsTable.innerHTML = html;
+                } catch (e) {
+                    standingsTable.innerHTML =
+                        '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore nel caricamento classifica.</td></tr>';
+                }
+            }
+
+            // --- GESTURE ---
+            let touchStartX = 0,
+                touchStartY = 0;
+            document.addEventListener('pointerdown', e => {
+                touchStartX = e.clientX;
+                touchStartY = e.clientY;
+            });
+            document.addEventListener('pointerup', e => {
+                if (e.target.closest('#date-picker') || e.target.closest('#standings-modal') || e.target
+                    .closest('.btn-standings')) return;
+                const diffX = e.clientX - touchStartX;
+                const diffY = Math.abs(e.clientY - touchStartY);
+                if (Math.abs(diffX) < 16 && diffY < 16) {
+                    const card = e.target.closest('.match-card');
+                    if (card && !inDetailView) {
+                        const matchId = card.dataset.id;
+                        const match = currentMatches.find(m => m.id === matchId);
+                        if (match) openDetail(match);
+                    }
+                    return;
+                }
+                if (inDetailView) return;
+                if (diffX > 55) {
+                    currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex -
+                        1;
+                    loadDataAndRender();
+                } else if (diffX < -55) {
+                    currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex +
+                        1;
+                    loadDataAndRender();
+                }
+            });
+            window.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && inDetailView) { e.preventDefault();
+                    loadDataAndRender(); }
+                if (!inDetailView && e.key === 'ArrowRight') {
+                    currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 :
+                        currentSportIndex + 1;
+                    loadDataAndRender();
+                }
+                if (!inDetailView && e.key === 'ArrowLeft') {
+                    currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex -
+                        1;
+                    loadDataAndRender();
+                }
+            });
+
+            loadDataAndRender();
+        })();
+    </script>
 </body>
 </html>
