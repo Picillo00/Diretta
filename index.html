@@ -20,9 +20,9 @@
             --card-yellow: #eab308;
             --card-red: #ef4444;
             --border: #1e293b;
-            --radius: 14px;
-            --radius-sm: 10px;
-            --shadow: 0 2px 12px rgba(0,0,0,0.4);
+            --radius: 12px;
+            --radius-sm: 8px;
+            --shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
@@ -363,11 +363,9 @@
         const diff = e.clientX - detailStartX;
         if (Math.abs(diff) > 40) {
             if (diff < -30) {
-                // swipe verso sinistra: avanza pannello
                 if (currentPanel === 'formazioni') goToPanel('classifica');
                 else if (currentPanel === 'classifica') goToPanel('partite');
             } else if (diff > 30) {
-                // swipe verso destra: torna indietro
                 if (currentPanel === 'classifica') goToPanel('formazioni');
                 else if (currentPanel === 'partite') goToPanel('classifica');
             }
@@ -499,7 +497,6 @@
             const res = await fetch(url);
             if (!res.ok) return null;
             const data = await res.json();
-            // La struttura può essere { teams: [...] } oppure { entries: [...] }
             const teams = data.teams || data.entries || [];
             if (teams.length >= 2) {
                 return teams.map(t => ({
@@ -628,7 +625,7 @@
                 return html;
             };
 
-            // Estrazione roster: prima prova i competitor, poi gamepackage.rosters, poi lineups dedicato
+            // Estrazione roster: competitor -> gamepackage.rosters -> lineups dedicato
             let homeRoster, awayRoster, homeTeamName, awayTeamName, homeLogo, awayLogo;
             if (competitors && competitors.length===2) {
                 homeRoster = competitors[0].roster?.entries;
