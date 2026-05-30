@@ -461,6 +461,18 @@
         });
     }
 
+    async function fetchLineupsFromEvent(leagueSlug, eventId) {
+        try {
+            const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
+            const res = await fetch(url);
+            if (!res.ok) return null;
+            const data = await res.json();
+            return data;
+        } catch (e) {
+            return null;
+        }
+    }
+
     async function openDetail(match) {
         currentDetailMatch = match;
         inDetailView = true;
@@ -487,8 +499,8 @@
         const lineupsContainer = document.getElementById('lineups-grid-container');
         const timelineEl = document.getElementById('det-timeline');
         lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni...</div>';
-        timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento dati partita...</div>';
-        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica disponibile con swipe →</td></tr>';
+        timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento eventi...</div>';
+        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica disponibile con swipe ←</td></tr>';
 
         try {
             const res = await fetch(match.summaryUrl);
@@ -499,7 +511,7 @@
             else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
             currentDetailMatch.seasonYear = seasonYear;
 
-            // Penalty shootout
+            // Rigori
             let homePenalty = null, awayPenalty = null;
             const details = summaryData?.gamepackage?.competition?.details || [];
             const penDetail = details.find(d => d.type === 'penaltyShootout');
@@ -539,11 +551,13 @@
                 playerEvents[pName].push({type, minute});
             });
 
-            // Funzione per costruire formazioni da roster
-            const buildFromRoster = (rosterEntries, teamName, logo) => {
+            // Funzione costruzione colonna formazione
+            const buildCol = (rosterEntries, teamName, logo) => {
                 const starters = rosterEntries.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
                 const subs = rosterEntries.filter(p=>!p.starter);
-                let html = `<div class="lineup-col"><div class="lineup-title"><img src="${logo}" onerror="this.style.display='none'"> ${teamName}</div><ul class="lineup-list">`;
+                let html = `<div class="lineup-col">
+                    <div class="lineup-title"><img src="${logo}" onerror="this.style.display='none'"> ${teamName}</div>
+                    <ul class="lineup-list">`;
                 starters.forEach(p=>{
                     const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
                     const nameLower = name.toLowerCase();
@@ -574,6 +588,7 @@
                 return html;
             };
 
+            // Estrazione roster con percorsi multipli
             let homeRoster, awayRoster, homeTeamName, awayTeamName, homeLogo, awayLogo;
             const competitors = summaryData?.gamepackage?.competition?.competitors;
             if (competitors && competitors.length===2) {
@@ -587,8 +602,8 @@
             if ((!homeRoster || homeRoster.length===0) && summaryData?.gamepackage?.rosters) {
                 const rostersByTeam = summaryData.gamepackage.rosters;
                 if (rostersByTeam.length>=2) {
-                    homeRoster = rostersByTeam[0].entries;
-                    awayRoster = rostersByTeam[1].entries;
+                    homeRoster = rostersByTeam[0].entries || rostersByTeam[0].roster?.entries;
+                    awayRoster = rostersByTeam[1].entries || rostersByTeam[1].roster?.entries;
                     homeTeamName = rostersByTeam[0].team?.shortDisplayName || 'Casa';
                     awayTeamName = rostersByTeam[1].team?.shortDisplayName || 'Trasferta';
                     homeLogo = rostersByTeam[0].team?.logo || '';
@@ -598,34 +613,29 @@
             if ((!homeRoster || homeRoster.length===0) && summaryData?.gamepackage?.lineups) {
                 const lineupsByTeam = summaryData.gamepackage.lineups;
                 if (lineupsByTeam.length>=2) {
-                    homeRoster = lineupsByTeam[0].entries;
-                    awayRoster = lineupsByTeam[1].entries;
+                    homeRoster = lineupsByTeam[0].roster?.entries || lineupsByTeam[0].entries;
+                    awayRoster = lineupsByTeam[1].roster?.entries || lineupsByTeam[1].entries;
                     homeTeamName = lineupsByTeam[0].team?.shortDisplayName || 'Casa';
                     awayTeamName = lineupsByTeam[1].team?.shortDisplayName || 'Trasferta';
                 }
             }
-            // Se ancora vuoto, proviamo endpoint lineups dedicato
             if ((!homeRoster || homeRoster.length===0)) {
-                try {
-                    const lineupsUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${match.leagueSlug}/lineups?event=${match.id}`;
-                    const lineupsRes = await fetch(lineupsUrl);
-                    if (lineupsRes.ok) {
-                        const lineupsData = await lineupsRes.json();
-                        const teams = lineupsData?.teams || lineupsData?.entries;
-                        if (teams && teams.length>=2) {
-                            homeRoster = teams[0].entries;
-                            awayRoster = teams[1].entries;
-                            homeTeamName = teams[0].team?.shortDisplayName || homeTeamName || 'Casa';
-                            awayTeamName = teams[1].team?.shortDisplayName || awayTeamName || 'Trasferta';
-                            homeLogo = teams[0].team?.logo || homeLogo || '';
-                            awayLogo = teams[1].team?.logo || awayLogo || '';
-                        }
+                const lineupsData = await fetchLineupsFromEvent(match.leagueSlug, match.id);
+                if (lineupsData) {
+                    const teams = lineupsData.teams || lineupsData.entries || [];
+                    if (teams.length>=2) {
+                        homeRoster = teams[0].entries;
+                        awayRoster = teams[1].entries;
+                        homeTeamName = teams[0].team?.shortDisplayName || homeTeamName || 'Casa';
+                        awayTeamName = teams[1].team?.shortDisplayName || awayTeamName || 'Trasferta';
+                        homeLogo = teams[0].team?.logo || homeLogo || '';
+                        awayLogo = teams[1].team?.logo || awayLogo || '';
                     }
-                } catch (e) {}
+                }
             }
 
             if (homeRoster && homeRoster.length>0 && awayRoster && awayRoster.length>0) {
-                lineupsContainer.innerHTML = buildFromRoster(homeRoster, homeTeamName, homeLogo) + buildFromRoster(awayRoster, awayTeamName, awayLogo);
+                lineupsContainer.innerHTML = buildCol(homeRoster, homeTeamName, homeLogo) + buildCol(awayRoster, awayTeamName, awayLogo);
             } else {
                 lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
             }
