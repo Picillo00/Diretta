@@ -22,7 +22,7 @@
             --border: #1e293b;
             --radius: 12px;
             --radius-sm: 8px;
-            --shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow: 0 2px 8px rgba(0,0,0,0.3);
         }
 
         * {
@@ -143,10 +143,10 @@
         .match-card {
             background: var(--surface);
             border-radius: var(--radius);
-            padding: 12px 14px;
+            padding: 10px 14px;
             display: flex;
-            justify-content: space-between;
-            align-items: center;
+            flex-direction: column;
+            gap: 4px;
             border-left: 4px solid transparent;
             cursor: pointer;
             transition: all 0.15s;
@@ -158,62 +158,71 @@
             transform: scale(0.985);
             background: #1a2338;
         }
-        .team-info {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            font-size: 15px;
-            font-weight: 700;
-            line-height: 1.2;
-            min-width: 0;
-            flex: 1;
-        }
+
         .league-tag {
             font-size: 9px;
             color: var(--text3);
             text-transform: uppercase;
             letter-spacing: 0.6px;
             font-weight: 600;
-            margin-bottom: 1px;
+            margin-bottom: 2px;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
         }
-        .team-name {
+
+        .teams-row {
             display: flex;
             align-items: center;
-            gap: 6px;
+            justify-content: center;
+            gap: 8px;
+            font-size: 15px;
+            font-weight: 700;
+            line-height: 1.2;
+            min-width: 0;
+        }
+
+        .team-name {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            flex-shrink: 1;
+            text-align: center;
         }
         .team-logo {
-            width: 20px;
-            height: 20px;
+            width: 22px;
+            height: 22px;
             object-fit: contain;
             border-radius: 4px;
             background: #1e293b;
-        }
-
-        .score-info {
-            text-align: right;
-            display: flex;
-            flex-direction: column;
-            align-items: flex-end;
-            min-width: 60px;
             flex-shrink: 0;
         }
-        .score {
-            font-size: 22px;
+
+        .inline-score {
+            font-size: 20px;
             font-weight: 900;
             letter-spacing: 1px;
             font-variant-numeric: tabular-nums;
             font-family: 'Inter', 'SF Mono', monospace;
+            color: #fff;
+            flex-shrink: 0;
+            padding: 0 4px;
+            text-align: center;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            font-size: 10px;
         }
         .status-badge {
-            font-size: 10px;
+            font-size: 9px;
             font-weight: 700;
-            padding: 3px 8px;
+            padding: 2px 10px;
             border-radius: 12px;
             letter-spacing: 0.4px;
-            margin-top: 2px;
         }
         .status-badge.live {
             color: #fff;
@@ -229,19 +238,12 @@
             background: #1e293b;
         }
         .start-time {
-            font-size: 10px;
             color: var(--text3);
-            margin-top: 3px;
             font-weight: 500;
         }
         @keyframes pulse-live {
-            0%,
-            100% {
-                opacity: 1;
-            }
-            50% {
-                opacity: 0.55;
-            }
+            0%,100% { opacity: 1; }
+            50% { opacity: 0.55; }
         }
 
         /* ─── MENU A TENDINA CAMPIONATI SECONDARI ─── */
@@ -264,7 +266,6 @@
             transition: all 0.2s;
             text-transform: uppercase;
             order: 999;
-            /* spinto in fondo */;
         }
         .collapsible-toggle:active {
             background: #253044;
@@ -386,7 +387,7 @@
             margin: 6px 0;
             letter-spacing: 2px;
             font-variant-numeric: tabular-nums;
-            font-family: 'Inter', 'SF Mono', monospace;
+            font-family: 'Inter','SF Mono',monospace;
         }
         .penalty-score {
             font-size: 14px;
@@ -444,7 +445,7 @@
             align-items: center;
             justify-content: space-between;
             gap: 4px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
             min-height: 22px;
         }
         .lineup-list li .plyr-name {
@@ -598,7 +599,7 @@
         #classifica-table td {
             padding: 7px 4px;
             text-align: center;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid rgba(255,255,255,0.03);
             font-weight: 500;
         }
         #classifica-table td:first-child {
@@ -739,8 +740,7 @@
         (() => {
             const datePicker = document.getElementById('date-picker');
             const today = new Date();
-            datePicker.value =
-                `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
+            datePicker.value = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}-${String(today.getDate()).padStart(2,'0')}`;
 
             const leaguePriority = {
                 "uefa.champions": 1,
@@ -762,30 +762,23 @@
                 "ksa.1": 17
             };
 
-            // Priorità massima per i campionati principali (mostrati sempre)
-            const MAIN_PRIORITY_THRESHOLD = 12; // ned.1 e superiori vanno nel menu a tendina
+            const MAIN_PRIORITY_THRESHOLD = 12;
 
             const sportConfigs = {
                 "CALCIO": {
                     color: "var(--accent-calcio)",
                     leagues: [
-                        { slug: "uefa.champions",
-                            url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard" },
-                        { slug: "fifa.world",
-                            url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" },
-                        { slug: "uefa.euro",
-                            url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.euro/scoreboard" },
+                        { slug: "uefa.champions", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.champions/scoreboard" },
+                        { slug: "fifa.world", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard" },
+                        { slug: "uefa.euro", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.euro/scoreboard" },
                         { slug: "ita.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard" },
                         { slug: "esp.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/esp.1/scoreboard" },
                         { slug: "eng.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard" },
                         { slug: "ger.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ger.1/scoreboard" },
                         { slug: "fra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/fra.1/scoreboard" },
-                        { slug: "uefa.europa",
-                            url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard" },
-                        { slug: "uefa.conference",
-                            url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard" },
-                        { slug: "uefa.nations",
-                            url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard" },
+                        { slug: "uefa.europa", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.europa/scoreboard" },
+                        { slug: "uefa.conference", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.conference/scoreboard" },
+                        { slug: "uefa.nations", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/uefa.nations/scoreboard" },
                         { slug: "ned.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/ned.1/scoreboard" },
                         { slug: "por.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/por.1/scoreboard" },
                         { slug: "bra.1", url: "https://site.api.espn.com/apis/site/v2/sports/soccer/bra.1/scoreboard" },
@@ -813,7 +806,7 @@
             let inDetailView = false;
             let currentMatches = [];
             let currentDetailMatch = null;
-            let currentPanel = 'formazioni'; // 'formazioni', 'classifica', 'partite'
+            let currentPanel = 'formazioni';
 
             const matchesListEl = document.getElementById('matches-list');
             const matchDetailEl = document.getElementById('match-detail');
@@ -831,13 +824,10 @@
                 if (!text) return '';
                 return text.replace(/\bGoal\b/gi, 'Gol').replace(/\bYellow card\b/gi, 'Cartellino giallo')
                     .replace(/\bRed card\b/gi, 'Cartellino rosso').replace(/\bPenalty\b/gi, 'Rigore')
-                    .replace(/\bSubstitution\b/gi, 'Sostituzione').replace(/\bin\b/gi, 'entra').replace(/\bout\b/gi,
-                        'esce')
+                    .replace(/\bSubstitution\b/gi, 'Sostituzione').replace(/\bin\b/gi, 'entra').replace(/\bout\b/gi, 'esce')
                     .replace(/\bInjury\b/gi, 'Infortunio').replace(/\bOwn goal\b/gi, 'Autogol')
-                    .replace(/\bMissed penalty\b/gi, 'Rigore sbagliato').replace(/\bAssist\b/gi, 'Assist').replace(
-                        /\bVAR\b/gi, 'VAR');
+                    .replace(/\bMissed penalty\b/gi, 'Rigore sbagliato').replace(/\bAssist\b/gi, 'Assist').replace(/\bVAR\b/gi, 'VAR');
             }
-
             function extractPlayerName(text) {
                 if (!text) return null;
                 const cleaned = text.split(',')[0].split(' - ')[0].replace(/\(.*?\)/g, '').trim();
@@ -872,12 +862,10 @@
                 } else if (panel === 'classifica') {
                     detailSlider.classList.add('show-classifica');
                     detailSlider.classList.remove('show-partite');
-                    if (currentDetailMatch) loadClassificaOrBracket(currentDetailMatch.leagueSlug, currentDetailMatch
-                        .league, currentDetailMatch.seasonYear);
+                    if (currentDetailMatch) loadClassificaOrBracket(currentDetailMatch.leagueSlug, currentDetailMatch.league, currentDetailMatch.seasonYear);
                 } else if (panel === 'partite') {
                     detailSlider.classList.add('show-partite');
-                    if (currentDetailMatch) loadRecentMatches(currentDetailMatch.leagueSlug, currentDetailMatch
-                        .seasonYear);
+                    if (currentDetailMatch) loadRecentMatches(currentDetailMatch.leagueSlug, currentDetailMatch.seasonYear);
                 }
             }
 
@@ -894,12 +882,9 @@
                         if (data.events) {
                             return data.events.map(event => {
                                 const comp = event.competitions[0];
-                                const home = comp.competitors.find(c => c.homeAway === 'home') || comp
-                                    .competitors[0];
-                                const away = comp.competitors.find(c => c.homeAway === 'away') || comp
-                                    .competitors[1];
-                                const leagueName = data.leagues?.[0] ? (data.leagues[0].abbreviation || data
-                                    .leagues[0].name) : '';
+                                const home = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
+                                const away = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
+                                const leagueName = data.leagues?.[0] ? (data.leagues[0].abbreviation || data.leagues[0].name) : '';
                                 const homeLogo = home?.team?.logo || home?.team?.logos?.[0]?.href || '';
                                 const awayLogo = away?.team?.logo || away?.team?.logos?.[0]?.href || '';
                                 return {
@@ -915,8 +900,7 @@
                                     status: event.status.type.shortDetail || '',
                                     state: event.status.type.state,
                                     isLive: event.status.type.state === 'in',
-                                    time: new Date(event.date).toLocaleTimeString('it-IT', { hour: '2-digit',
-                                        minute: '2-digit' }),
+                                    time: new Date(event.date).toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' }),
                                     summaryUrl: url.replace('/scoreboard', '/summary?event=' + event.id)
                                 };
                             });
@@ -944,13 +928,11 @@
             }
 
             async function searchPreviousDays(sportName, startDateStr, maxDays = 7) {
-                const start = new Date(+startDateStr.substring(0, 4), +startDateStr.substring(4, 6) - 1, +startDateStr
-                    .substring(6, 8));
+                const start = new Date(+startDateStr.substring(0, 4), +startDateStr.substring(4, 6) - 1, +startDateStr.substring(6, 8));
                 for (let i = 1; i <= maxDays; i++) {
                     const d = new Date(start);
                     d.setDate(d.getDate() - i);
-                    const ds =
-                        `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+                    const ds = `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
                     const matches = await fetchRealData(sportName, ds);
                     if (matches.length > 0) return {
                         matches,
@@ -967,13 +949,15 @@
                 card.style.borderLeftColor = configColor;
                 let statusClass = match.isLive ? 'live' : (match.state === 'pre' ? 'upcoming' : 'finished');
                 card.innerHTML = `
-                    <div class="team-info">
-                        <span class="league-tag">🏆 ${match.league}</span>
-                        <div class="team-name"><img src="${match.homeLogo}" class="team-logo" onerror="this.style.display='none'"> ${match.home}</div>
-                        <div class="team-name"><img src="${match.awayLogo}" class="team-logo" onerror="this.style.display='none'"> ${match.away}</div>
+                    <span class="league-tag">🏆 ${match.league}</span>
+                    <div class="teams-row">
+                        <img src="${match.homeLogo}" class="team-logo" onerror="this.style.display='none'">
+                        <span class="team-name">${match.home}</span>
+                        <span class="inline-score">${match.scoreH} - ${match.scoreA}</span>
+                        <span class="team-name">${match.away}</span>
+                        <img src="${match.awayLogo}" class="team-logo" onerror="this.style.display='none'">
                     </div>
-                    <div class="score-info">
-                        <span class="score">${match.scoreH} - ${match.scoreA}</span>
+                    <div class="status-row">
                         <span class="status-badge ${statusClass}">${match.status}</span>
                         <span class="start-time">${match.state==='pre'?'🕐 ':'⏱️ '}${match.time}</span>
                     </div>`;
@@ -981,16 +965,12 @@
             }
 
             function buildCollapsibleSection(secondaryMatches, configColor) {
-                // Contenitore toggle + partite secondarie
                 const fragment = document.createDocumentFragment();
-
                 const toggleBtn = document.createElement('button');
                 toggleBtn.className = 'collapsible-toggle';
                 toggleBtn.id = 'secondary-toggle';
-                toggleBtn.innerHTML =
-                    `📂 ALTRE LEGHE <span class="badge-count">${secondaryMatches.length} partite</span> <span class="arrow">▼</span>`;
+                toggleBtn.innerHTML = `📂 ALTRE LEGHE <span class="badge-count">${secondaryMatches.length} partite</span> <span class="arrow">▼</span>`;
                 fragment.appendChild(toggleBtn);
-
                 const container = document.createElement('div');
                 container.className = 'secondary-matches-container';
                 container.id = 'secondary-container';
@@ -998,7 +978,6 @@
                     container.appendChild(createMatchCard(match, configColor));
                 });
                 fragment.appendChild(container);
-
                 return fragment;
             }
 
@@ -1020,39 +999,29 @@
                     const prev = await searchPreviousDays(sportName, espnDate, 7);
                     if (prev) {
                         currentMatches = prev.matches;
-                        bannerHTML =
-                            `<div class="section-banner">📅 Nessuna partita per la data selezionata.<br><span>Ultime partite – ${prev.dateFormatted}</span></div>`;
+                        bannerHTML = `<div class="section-banner">📅 Nessuna partita per la data selezionata.<br><span>Ultime partite – ${prev.dateFormatted}</span></div>`;
                     }
                 }
 
-                // Separa partite principali e secondarie
-                const mainMatches = currentMatches.filter(m => (leaguePriority[m.leagueSlug] ?? 100) <
-                    MAIN_PRIORITY_THRESHOLD);
-                const secondaryMatches = currentMatches.filter(m => (leaguePriority[m.leagueSlug] ?? 100) >=
-                    MAIN_PRIORITY_THRESHOLD);
+                const mainMatches = currentMatches.filter(m => (leaguePriority[m.leagueSlug] ?? 100) < MAIN_PRIORITY_THRESHOLD);
+                const secondaryMatches = currentMatches.filter(m => (leaguePriority[m.leagueSlug] ?? 100) >= MAIN_PRIORITY_THRESHOLD);
 
-                // Pulisce e imposta il banner
                 matchesListEl.innerHTML = bannerHTML;
-
                 if (currentMatches.length === 0 && !bannerHTML) {
-                    matchesListEl.innerHTML +=
-                        '<div class="loading-text">😕 Nessuna partita rilevante per la data selezionata.</div>';
+                    matchesListEl.innerHTML += '<div class="loading-text">😕 Nessuna partita rilevante per la data selezionata.</div>';
                     return;
                 }
 
-                // Renderizza le partite principali
                 mainMatches.forEach(match => {
                     matchesListEl.appendChild(createMatchCard(match, config.color));
                 });
 
-                // Aggiunge la sezione collassabile per le partite secondarie
                 if (secondaryMatches.length > 0) {
                     const collapsibleFrag = buildCollapsibleSection(secondaryMatches, config.color);
                     matchesListEl.appendChild(collapsibleFrag);
                 }
             }
 
-            // Event delegation per il toggle delle leghe secondarie
             matchesListEl.addEventListener('click', (e) => {
                 const toggleBtn = e.target.closest('#secondary-toggle');
                 if (!toggleBtn) return;
@@ -1074,8 +1043,7 @@
 
             async function fetchLineups(leagueSlug, eventId) {
                 try {
-                    const url =
-                        `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
+                    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
                     const res = await fetch(url);
                     if (!res.ok) return null;
                     const data = await res.json();
@@ -1104,8 +1072,7 @@
                 const color = config.color;
 
                 document.getElementById('det-league').textContent = '🏆 ' + match.league;
-                document.getElementById('det-teams').innerHTML =
-                    `<span><img src="${match.homeLogo}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;" onerror="this.style.display='none'"> ${match.home} - ${match.away} <img src="${match.awayLogo}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;" onerror="this.style.display='none'"></span>`;
+                document.getElementById('det-teams').innerHTML = `<span><img src="${match.homeLogo}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;" onerror="this.style.display='none'"> ${match.home} - ${match.away} <img src="${match.awayLogo}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;" onerror="this.style.display='none'"></span>`;
                 document.getElementById('det-score').textContent = match.scoreH + ' - ' + match.scoreA;
                 document.getElementById('det-score').style.color = color;
                 const penaltyEl = document.getElementById('det-penalty');
@@ -1119,10 +1086,8 @@
                 const timelineEl = document.getElementById('det-timeline');
                 lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni...</div>';
                 timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento eventi...</div>';
-                classificaTable.innerHTML =
-                    '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica con swipe ←</td></tr>';
-                partiteList.innerHTML =
-                '<div class="loading-text">Partite recenti con swipe →→</div>';
+                classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica con swipe ←</td></tr>';
+                partiteList.innerHTML = '<div class="loading-text">Partite recenti con swipe →→</div>';
 
                 try {
                     const res = await fetch(match.summaryUrl);
@@ -1133,16 +1098,13 @@
                     else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
                     currentDetailMatch.seasonYear = seasonYear;
 
-                    // Rigori
-                    let homePenalty = null,
-                        awayPenalty = null;
+                    let homePenalty = null, awayPenalty = null;
                     const competitors = summaryData?.gamepackage?.competition?.competitors;
                     if (competitors && competitors.length === 2) {
                         homePenalty = competitors[0].penaltyShootout?.score;
                         awayPenalty = competitors[1].penaltyShootout?.score;
                     }
-                    if ((homePenalty === undefined || homePenalty === null) && summaryData?.gamepackage?.competition
-                        ?.details) {
+                    if ((homePenalty === undefined || homePenalty === null) && summaryData?.gamepackage?.competition?.details) {
                         const details = summaryData.gamepackage.competition.details;
                         const penDetail = details.find(d => d.type === 'penaltyShootout');
                         if (penDetail && penDetail.competitors) {
@@ -1150,17 +1112,14 @@
                             awayPenalty = penDetail.competitors[1]?.score;
                         }
                     }
-                    if (homePenalty !== undefined && awayPenalty !== undefined && homePenalty !== null && awayPenalty !==
-                        null) {
+                    if (homePenalty !== undefined && awayPenalty !== undefined && homePenalty !== null && awayPenalty !== null) {
                         penaltyEl.textContent = `(${homePenalty} - ${awayPenalty} d.c.r.)`;
                         penaltyEl.style.display = 'block';
                     }
 
                     const allKeyEvents = summaryData?.keyEvents || [];
                     const playerEvents = {};
-                    const importantTypes = ['goal', 'yellow', 'red', 'penalty', 'injury', 'assist', 'var', 'own goal',
-                        'missed penalty'
-                    ];
+                    const importantTypes = ['goal', 'yellow', 'red', 'penalty', 'injury', 'assist', 'var', 'own goal', 'missed penalty'];
                     allKeyEvents.forEach(ev => {
                         const t = (ev.type?.text || '').toLowerCase();
                         if (!importantTypes.some(k => t.includes(k))) return;
@@ -1180,8 +1139,7 @@
                     });
 
                     const buildCol = (rosterEntries, teamName, logo) => {
-                        const starters = rosterEntries.filter(p => p.starter).sort((a, b) => (a.order || 0) - (b
-                            .order || 0));
+                        const starters = rosterEntries.filter(p => p.starter).sort((a, b) => (a.order || 0) - (b.order || 0));
                         const subs = rosterEntries.filter(p => !p.starter);
                         let html = `<div class="lineup-col">
                             <div class="lineup-title"><img src="${logo}" onerror="this.style.display='none'"> ${teamName}</div>
@@ -1189,35 +1147,26 @@
                         starters.forEach(p => {
                             const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
                             const nameLower = name.toLowerCase();
-                            const pos = p.position?.abbreviation ? (positionIT[p.position
-                                .abbreviation] || p.position.abbreviation) : '';
+                            const pos = p.position?.abbreviation ? (positionIT[p.position.abbreviation] || p.position.abbreviation) : '';
                             let badges = '';
                             (playerEvents[nameLower] || []).forEach(ev => {
-                                let cls = ev.type === 'goal' ? 'goal' : (ev.type === 'yellow' ?
-                                    'yellow' : (ev.type === 'red' ? 'red' : ''));
-                                badges +=
-                                    `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
+                                let cls = ev.type === 'goal' ? 'goal' : (ev.type === 'yellow' ? 'yellow' : (ev.type === 'red' ? 'red' : ''));
+                                badges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
                             });
-                            html +=
-                                `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${badges}<span class="pos-tag">${pos}</span></span></li>`;
+                            html += `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${badges}<span class="pos-tag">${pos}</span></span></li>`;
                         });
                         html += `</ul>`;
                         if (subs.length > 0) {
-                            html +=
-                                `<div class="subs-label-lineup">🪑 Panchina</div><ul class="lineup-list">`;
+                            html += `<div class="subs-label-lineup">🪑 Panchina</div><ul class="lineup-list">`;
                             subs.forEach(p => {
                                 const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
                                 const nameLower = name.toLowerCase();
                                 let badges = '';
                                 (playerEvents[nameLower] || []).forEach(ev => {
-                                    let cls = ev.type === 'goal' ? 'goal' : (ev.type ===
-                                        'yellow' ? 'yellow' : (ev.type === 'red' ?
-                                            'red' : ''));
-                                    badges +=
-                                        `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
+                                    let cls = ev.type === 'goal' ? 'goal' : (ev.type === 'yellow' ? 'yellow' : (ev.type === 'red' ? 'red' : ''));
+                                    badges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
                                 });
-                                html +=
-                                    `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${badges}</span></li>`;
+                                html += `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${badges}</span></li>`;
                             });
                             html += `</ul>`;
                         }
@@ -1230,18 +1179,15 @@
                         homeRoster = competitors[0].roster?.entries;
                         awayRoster = competitors[1].roster?.entries;
                         homeTeamName = competitors[0].team?.shortDisplayName || competitors[0].team?.name || 'Casa';
-                        awayTeamName = competitors[1].team?.shortDisplayName || competitors[1].team?.name ||
-                            'Trasferta';
+                        awayTeamName = competitors[1].team?.shortDisplayName || competitors[1].team?.name || 'Trasferta';
                         homeLogo = competitors[0].team?.logo || competitors[0].team?.logos?.[0]?.href || '';
                         awayLogo = competitors[1].team?.logo || competitors[1].team?.logos?.[0]?.href || '';
                     }
                     if ((!homeRoster || homeRoster.length === 0) && summaryData?.gamepackage?.rosters) {
                         const rostersByTeam = summaryData.gamepackage.rosters;
                         if (rostersByTeam.length >= 2) {
-                            homeRoster = rostersByTeam[0].entries || (rostersByTeam[0].roster ? rostersByTeam[0].roster
-                                .entries : null);
-                            awayRoster = rostersByTeam[1].entries || (rostersByTeam[1].roster ? rostersByTeam[1].roster
-                                .entries : null);
+                            homeRoster = rostersByTeam[0].entries || (rostersByTeam[0].roster ? rostersByTeam[0].roster.entries : null);
+                            awayRoster = rostersByTeam[1].entries || (rostersByTeam[1].roster ? rostersByTeam[1].roster.entries : null);
                             homeTeamName = rostersByTeam[0].team?.shortDisplayName || 'Casa';
                             awayTeamName = rostersByTeam[1].team?.shortDisplayName || 'Trasferta';
                             homeLogo = rostersByTeam[0].team?.logo || '';
@@ -1261,11 +1207,9 @@
                     }
 
                     if (homeRoster && homeRoster.length > 0 && awayRoster && awayRoster.length > 0) {
-                        lineupsContainer.innerHTML = buildCol(homeRoster, homeTeamName, homeLogo) + buildCol(awayRoster,
-                            awayTeamName, awayLogo);
+                        lineupsContainer.innerHTML = buildCol(homeRoster, homeTeamName, homeLogo) + buildCol(awayRoster, awayTeamName, awayLogo);
                     } else {
-                        lineupsContainer.innerHTML =
-                            '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
+                        lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
                     }
 
                     const filteredEvents = allKeyEvents.filter(ev => {
@@ -1294,13 +1238,11 @@
                                 </div>`;
                         });
                     } else {
-                        timelineEl.innerHTML =
-                            '<div class="loading-text">📋 Nessun evento saliente disponibile.</div>';
+                        timelineEl.innerHTML = '<div class="loading-text">📋 Nessun evento saliente disponibile.</div>';
                     }
                 } catch (e) {
                     lineupsContainer.innerHTML = '<div class="loading-text">Errore caricamento formazioni.</div>';
-                    timelineEl.innerHTML =
-                        '<div class="loading-text" style="color:#ef4444;">⚠️ Errore di connessione.</div>';
+                    timelineEl.innerHTML = '<div class="loading-text" style="color:#ef4444;">⚠️ Errore di connessione.</div>';
                 }
             }
 
@@ -1308,17 +1250,14 @@
                 classificaTitleEl.innerHTML = '📊 ' + (leagueName || leagueSlug);
                 const bracketLeagues = ["uefa.champions", "uefa.europa", "uefa.conference", "fifa.world", "uefa.euro"];
                 if (bracketLeagues.includes(leagueSlug)) {
-                    classificaTable.innerHTML =
-                        '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento tabellone...</td></tr>';
+                    classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento tabellone...</td></tr>';
                     try {
-                        const bracketUrl =
-                            `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/bracket`;
+                        const bracketUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/bracket`;
                         const res = await fetch(bracketUrl);
                         const data = await res.json();
                         const matches = data?.bracket?.matches || data?.matches || [];
                         if (matches.length === 0) {
-                            classificaTable.innerHTML =
-                                '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Tabellone non disponibile.</td></tr>';
+                            classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Tabellone non disponibile.</td></tr>';
                             return;
                         }
                         let html = '';
@@ -1336,17 +1275,14 @@
                         });
                         document.getElementById('classifica-table-wrap').innerHTML = html;
                     } catch (e) {
-                        classificaTable.innerHTML =
-                            '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore tabellone.</td></tr>';
+                        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore tabellone.</td></tr>';
                     }
                     return;
                 }
 
-                classificaTable.innerHTML =
-                    '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
+                classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
                 const trySeason = async (season) => {
-                    const url =
-                        `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
+                    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
                     const res = await fetch(url);
                     if (!res.ok) return null;
                     return await res.json();
@@ -1356,17 +1292,14 @@
                     if (!data || !data.standings?.entries?.length) data = await trySeason(null);
                     const entries = data?.standings?.entries || [];
                     if (entries.length === 0) {
-                        classificaTable.innerHTML =
-                            '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica non disponibile.</td></tr>';
+                        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica non disponibile.</td></tr>';
                         return;
                     }
-                    let html =
-                        `<thead><tr><th>#</th><th>Squadra</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>GF:GS</th><th>Pt</th></tr></thead><tbody>`;
+                    let html = `<thead><tr><th>#</th><th>Squadra</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>GF:GS</th><th>Pt</th></tr></thead><tbody>`;
                     entries.forEach((entry, idx) => {
                         const teamName = entry.team?.shortDisplayName || entry.team?.name || '???';
                         const logo = entry.team?.logo || entry.team?.logos?.[0]?.href || '';
-                        const getStat = (name) => { const s = entry.stats?.find(s => s.name === name); return s ? s
-                                .value : '-'; };
+                        const getStat = (name) => { const s = entry.stats?.find(s => s.name === name); return s ? s.value : '-'; };
                         html += `<tr>
                             <td class="pos-cell">${idx+1}</td>
                             <td><img src="${logo}" class="classifica-logo" onerror="this.style.display='none'"> ${teamName}</td>
@@ -1377,22 +1310,19 @@
                     html += '</tbody>';
                     classificaTable.innerHTML = html;
                 } catch (e) {
-                    classificaTable.innerHTML =
-                        '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore nel caricamento classifica.</td></tr>';
+                    classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore nel caricamento classifica.</td></tr>';
                 }
             }
 
             async function loadRecentMatches(leagueSlug, seasonYear) {
                 partiteList.innerHTML = '<div class="loading-text">Caricamento partite recenti...</div>';
                 try {
-                    const url =
-                        `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/scoreboard?season=${seasonYear}`;
+                    const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/scoreboard?season=${seasonYear}`;
                     const res = await fetch(url);
                     const data = await res.json();
                     const events = data?.events || [];
                     if (events.length === 0) {
-                        partiteList.innerHTML =
-                        '<div class="loading-text">Nessuna partita recente trovata.</div>';
+                        partiteList.innerHTML = '<div class="loading-text">Nessuna partita recente trovata.</div>';
                         return;
                     }
                     let html = '';
@@ -1412,15 +1342,11 @@
                 }
             }
 
-            let globalStartX = 0,
-                globalStartY = 0;
-            document.addEventListener('pointerdown', e => { globalStartX = e.clientX;
-                globalStartY = e.clientY; });
+            let globalStartX = 0, globalStartY = 0;
+            document.addEventListener('pointerdown', e => { globalStartX = e.clientX; globalStartY = e.clientY; });
             document.addEventListener('pointerup', e => {
-                if (e.target.closest('#date-picker') || e.target.closest('#match-detail') || e.target.closest(
-                        '#secondary-toggle')) return;
-                const diffX = e.clientX - globalStartX,
-                    diffY = Math.abs(e.clientY - globalStartY);
+                if (e.target.closest('#date-picker') || e.target.closest('#match-detail') || e.target.closest('#secondary-toggle')) return;
+                const diffX = e.clientX - globalStartX, diffY = Math.abs(e.clientY - globalStartY);
                 if (Math.abs(diffX) < 16 && diffY < 16) {
                     const card = e.target.closest('.match-card');
                     if (card && !inDetailView) {
@@ -1440,17 +1366,9 @@
                 }
             });
             window.addEventListener('keydown', (e) => {
-                if (e.key === 'Backspace' && inDetailView) { e.preventDefault();
-                    loadDataAndRender(); }
-                if (!inDetailView && e.key === 'ArrowRight') {
-                    currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex +
-                    1;
-                    loadDataAndRender();
-                }
-                if (!inDetailView && e.key === 'ArrowLeft') {
-                    currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1;
-                    loadDataAndRender();
-                }
+                if (e.key === 'Backspace' && inDetailView) { e.preventDefault(); loadDataAndRender(); }
+                if (!inDetailView && e.key === 'ArrowRight') { currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex + 1; loadDataAndRender(); }
+                if (!inDetailView && e.key === 'ArrowLeft') { currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1; loadDataAndRender(); }
             });
 
             loadDataAndRender();
