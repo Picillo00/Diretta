@@ -24,15 +24,12 @@
             --radius-sm: 10px;
             --shadow: 0 2px 12px rgba(0,0,0,0.4);
         }
-
         * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; margin: 0; padding: 0; }
-
         body, html {
             height: 100%; background: var(--bg); color: var(--text);
             font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             overflow: hidden; touch-action: none;
         }
-
         #header {
             display: flex; justify-content: space-between; align-items: center;
             padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--border);
@@ -46,30 +43,24 @@
         }
         #btn-home.active { display: block; }
         #btn-home:active { background: #334155; transform: scale(0.96); }
-        #sport-title {
-            font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap;
-        }
+        #sport-title { font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap; }
         #date-picker {
             background: var(--surface2); color: var(--text); border: 1px solid var(--border);
             padding: 7px 10px; border-radius: 20px; font-family: inherit; font-size: 13px;
             color-scheme: dark; outline: none; cursor: pointer; font-weight: 600; min-width: 0;
         }
-
         #main-view { height: calc(100% - 48px); width: 100%; position: relative; overflow: hidden; }
-
         #matches-list {
             height: 100%; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column;
             gap: 8px; padding-bottom: 40px;
         }
         #matches-list::-webkit-scrollbar { display: none; }
-
         .section-banner {
             background: var(--surface2); border-radius: var(--radius-sm); padding: 10px 14px;
             text-align: center; font-size: 11px; color: var(--text2); font-weight: 600;
             letter-spacing: 0.5px; border: 1px dashed var(--border); margin-bottom: 4px;
         }
         .section-banner span { color: var(--accent-calcio); font-weight: 700; }
-
         .match-card {
             background: var(--surface); border-radius: var(--radius); padding: 12px 14px;
             display: flex; justify-content: space-between; align-items: center;
@@ -81,7 +72,6 @@
         .league-tag { font-size: 9px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.6px; font-weight: 600; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .team-name { display: flex; align-items: center; gap: 6px; }
         .team-logo { width: 20px; height: 20px; object-fit: contain; border-radius: 4px; background: #1e293b; }
-
         .score-info { text-align: right; display: flex; flex-direction: column; align-items: flex-end; min-width: 60px; flex-shrink: 0; }
         .score { font-size: 22px; font-weight: 900; letter-spacing: 1px; font-variant-numeric: tabular-nums; font-family: 'Inter','SF Mono',monospace; }
         .status-badge { font-size: 10px; font-weight: 700; padding: 3px 8px; border-radius: 12px; letter-spacing: 0.4px; margin-top: 2px; }
@@ -91,13 +81,10 @@
         .start-time { font-size: 10px; color: var(--text3); margin-top: 3px; font-weight: 500; }
         @keyframes pulse-live { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
-        /* DETTAGLIO PARTITA */
         #match-detail { display: none; height: 100%; overflow: hidden; background: var(--bg); position: relative; }
         #match-detail.active { display: block; }
-
         #detail-slider { display: flex; height: 100%; width: 200%; transition: transform 0.3s ease; }
         #detail-slider.show-classifica { transform: translateX(-50%); }
-
         .detail-panel { width: 50%; height: 100%; overflow-y: auto; padding: 14px; padding-bottom: 50px; }
         .detail-panel::-webkit-scrollbar { display: none; }
 
@@ -113,9 +100,7 @@
         }
         .detail-teams { font-size: 18px; font-weight: 800; margin-top: 6px; letter-spacing: 0.3px; }
         .detail-score { font-size: 36px; font-weight: 900; margin: 6px 0; letter-spacing: 2px; font-variant-numeric: tabular-nums; font-family: 'Inter','SF Mono',monospace; }
-        .penalty-score {
-            font-size: 14px; font-weight: 600; color: var(--text2); margin-top: 2px;
-        }
+        .penalty-score { font-size: 14px; font-weight: 600; color: var(--text2); margin-top: 2px; }
         .detail-status { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 14px; display: inline-block; letter-spacing: 0.4px; }
 
         .lineups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px; }
@@ -163,7 +148,6 @@
         .event .ev-time { font-weight: 800; min-width: 32px; font-size: 12px; flex-shrink: 0; letter-spacing: 0.3px; }
         .event .ev-text { font-weight: 500; font-size: 12px; line-height: 1.4; }
 
-        /* Pannello classifica */
         #panel-classifica { display: flex; flex-direction: column; }
         #panel-classifica .classifica-header {
             display: flex; justify-content: space-between; align-items: center;
@@ -186,6 +170,15 @@
         #classifica-table td:first-child { text-align: left; font-weight: 700; padding-left: 8px; display: flex; align-items: center; gap: 6px; }
         .classifica-logo { width: 18px; height: 18px; object-fit: contain; border-radius: 4px; }
 
+        /* Bracket/tabellone */
+        .bracket-match {
+            background: var(--surface2); border-radius: var(--radius-sm); padding: 10px;
+            margin-bottom: 8px; display: flex; align-items: center; gap: 10px;
+            font-size: 12px; font-weight: 600;
+        }
+        .bracket-teams { flex: 1; }
+        .bracket-score { font-weight: 800; font-size: 13px; }
+
         #footer {
             position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 9px;
             color: var(--text3); background: var(--surface); padding: 5px; border-top: 1px solid var(--border);
@@ -195,7 +188,6 @@
     </style>
 </head>
 <body>
-
 <div id="header">
     <div class="header-left">
         <button id="btn-home">⬅ HOME</button>
@@ -206,14 +198,13 @@
 
 <div id="main-view">
     <div id="matches-list"></div>
-
     <div id="match-detail">
         <div id="detail-slider">
             <div id="panel-formazioni" class="detail-panel">
                 <div class="detail-header">
                     <div class="league-row">
                         <span class="league-name" id="det-league"></span>
-                        <span class="swipe-hint-detail">← Classifica | Formazioni →</span>
+                        <span class="swipe-hint-detail">← Classifica/Tabellone | Formazioni →</span>
                     </div>
                     <div class="detail-teams" id="det-teams">Squadra A - Squadra B</div>
                     <div class="detail-score" id="det-score">0 - 0</div>
@@ -224,10 +215,9 @@
                 <div class="section-title-timeline">📋 MOMENTI SALIENTI</div>
                 <div class="timeline" id="det-timeline"></div>
             </div>
-
             <div id="panel-classifica" class="detail-panel">
                 <div class="classifica-header">
-                    <span class="classifica-title" id="classifica-title">📊 Classifica</span>
+                    <span class="classifica-title" id="classifica-title">📊 Classifica / Tabellone</span>
                     <span class="swipe-hint-detail">← Formazioni | Classifica →</span>
                 </div>
                 <div id="classifica-table-wrap">
@@ -237,7 +227,6 @@
         </div>
     </div>
 </div>
-
 <div id="footer"><b>← Swipe →</b> Sport &nbsp;|&nbsp; <b>Tocca</b> Dettaglio &nbsp;|&nbsp; <b>⬅ Home</b> Torna indietro</div>
 
 <script>
@@ -320,7 +309,6 @@
             .replace(/\bInjury\b/gi,'Infortunio').replace(/\bOwn goal\b/gi,'Autogol')
             .replace(/\bMissed penalty\b/gi,'Rigore sbagliato').replace(/\bAssist\b/gi,'Assist').replace(/\bVAR\b/gi,'VAR');
     }
-
     function extractPlayerName(text) {
         if (!text) return null;
         const cleaned = text.split(',')[0].split(' - ')[0].replace(/\(.*?\)/g,'').trim();
@@ -346,7 +334,7 @@
     function showClassificaPanel() {
         showingClassifica = true;
         detailSlider.classList.add('show-classifica');
-        if (currentDetailMatch) loadClassifica(currentDetailMatch.leagueSlug, currentDetailMatch.league, currentDetailMatch.seasonYear);
+        if (currentDetailMatch) loadClassificaOrBracket(currentDetailMatch.leagueSlug, currentDetailMatch.league, currentDetailMatch.seasonYear);
     }
     function showFormazioniPanel() {
         showingClassifica = false;
@@ -372,9 +360,7 @@
                         const homeLogo = home?.team?.logo || home?.team?.logos?.[0]?.href || '';
                         const awayLogo = away?.team?.logo || away?.team?.logos?.[0]?.href || '';
                         return {
-                            id: event.id,
-                            leagueSlug: slug,
-                            league: leagueName || slug,
+                            id: event.id, leagueSlug: slug, league: leagueName || slug,
                             home: home?.team?.shortDisplayName || home?.team?.name || '???',
                             away: away?.team?.shortDisplayName || away?.team?.name || '???',
                             homeLogo, awayLogo,
@@ -392,8 +378,7 @@
         const results = await Promise.all(fetchPromises);
         results.forEach(m=> allMatches = allMatches.concat(m));
         allMatches.sort((a,b)=>{
-            const pA = leaguePriority[a.leagueSlug] ?? 100;
-            const pB = leaguePriority[b.leagueSlug] ?? 100;
+            const pA = leaguePriority[a.leagueSlug] ?? 100, pB = leaguePriority[b.leagueSlug] ?? 100;
             if (pA !== pB) return pA - pB;
             if (a.isLive && !b.isLive) return -1;
             if (!a.isLive && b.isLive) return 1;
@@ -461,16 +446,13 @@
         });
     }
 
-    async function fetchLineupsFromEvent(leagueSlug, eventId) {
+    async function fetchLineups(leagueSlug, eventId) {
         try {
             const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
             const res = await fetch(url);
             if (!res.ok) return null;
-            const data = await res.json();
-            return data;
-        } catch (e) {
-            return null;
-        }
+            return await res.json();
+        } catch (e) { return null; }
     }
 
     async function openDetail(match) {
@@ -500,7 +482,7 @@
         const timelineEl = document.getElementById('det-timeline');
         lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni...</div>';
         timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento eventi...</div>';
-        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica disponibile con swipe ←</td></tr>';
+        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Tabellone/Classifica con swipe ←</td></tr>';
 
         try {
             const res = await fetch(match.summaryUrl);
@@ -511,18 +493,19 @@
             else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
             currentDetailMatch.seasonYear = seasonYear;
 
-            // Rigori
+            // Rigori: controlla più percorsi
             let homePenalty = null, awayPenalty = null;
-            const details = summaryData?.gamepackage?.competition?.details || [];
-            const penDetail = details.find(d => d.type === 'penaltyShootout');
-            if (penDetail) {
-                homePenalty = penDetail.competitors?.[0]?.score;
-                awayPenalty = penDetail.competitors?.[1]?.score;
-            } else {
-                const competitors = summaryData?.gamepackage?.competition?.competitors;
-                if (competitors && competitors.length===2) {
-                    homePenalty = competitors[0].penaltyShootout?.score;
-                    awayPenalty = competitors[1].penaltyShootout?.score;
+            const competitors = summaryData?.gamepackage?.competition?.competitors;
+            if (competitors && competitors.length===2) {
+                homePenalty = competitors[0].penaltyShootout?.score;
+                awayPenalty = competitors[1].penaltyShootout?.score;
+            }
+            if ((homePenalty === undefined || homePenalty === null) && summaryData?.gamepackage?.competition?.details) {
+                const details = summaryData.gamepackage.competition.details;
+                const penDetail = details.find(d => d.type === 'penaltyShootout');
+                if (penDetail && penDetail.competitors) {
+                    homePenalty = penDetail.competitors[0]?.score;
+                    awayPenalty = penDetail.competitors[1]?.score;
                 }
             }
             if (homePenalty !== undefined && awayPenalty !== undefined && homePenalty !== null && awayPenalty !== null) {
@@ -551,7 +534,6 @@
                 playerEvents[pName].push({type, minute});
             });
 
-            // Funzione costruzione colonna formazione
             const buildCol = (rosterEntries, teamName, logo) => {
                 const starters = rosterEntries.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
                 const subs = rosterEntries.filter(p=>!p.starter);
@@ -588,9 +570,7 @@
                 return html;
             };
 
-            // Estrazione roster con percorsi multipli
             let homeRoster, awayRoster, homeTeamName, awayTeamName, homeLogo, awayLogo;
-            const competitors = summaryData?.gamepackage?.competition?.competitors;
             if (competitors && competitors.length===2) {
                 homeRoster = competitors[0].roster?.entries;
                 awayRoster = competitors[1].roster?.entries;
@@ -620,7 +600,7 @@
                 }
             }
             if ((!homeRoster || homeRoster.length===0)) {
-                const lineupsData = await fetchLineupsFromEvent(match.leagueSlug, match.id);
+                const lineupsData = await fetchLineups(match.leagueSlug, match.id);
                 if (lineupsData) {
                     const teams = lineupsData.teams || lineupsData.entries || [];
                     if (teams.length>=2) {
@@ -673,8 +653,44 @@
         }
     }
 
-    async function loadClassifica(leagueSlug, leagueName, seasonYear) {
+    async function loadClassificaOrBracket(leagueSlug, leagueName, seasonYear) {
         classificaTitleEl.innerHTML = '📊 '+(leagueName||leagueSlug);
+        const tableWrap = document.getElementById('classifica-table-wrap');
+        // Per Champions, Europa, Conference, World Cup, Euro: mostra bracket/tabellone
+        const bracketLeagues = ["uefa.champions","uefa.europa","uefa.conference","fifa.world","uefa.euro"];
+        if (bracketLeagues.includes(leagueSlug)) {
+            // Carica bracket
+            classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento tabellone...</td></tr>';
+            try {
+                const bracketUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/bracket`;
+                const res = await fetch(bracketUrl);
+                const data = await res.json();
+                const matches = data?.bracket?.matches || data?.matches || [];
+                if (matches.length===0) {
+                    classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Tabellone non disponibile.</td></tr>';
+                    return;
+                }
+                let html = '';
+                matches.forEach(m => {
+                    const home = m.home?.team?.shortDisplayName || m.home?.team?.name || '???';
+                    const away = m.away?.team?.shortDisplayName || m.away?.team?.name || '???';
+                    const scoreH = m.home?.score ?? '-';
+                    const scoreA = m.away?.score ?? '-';
+                    const round = m.round?.name || '';
+                    html += `<div class="bracket-match">
+                        <span style="font-size:10px;color:var(--text3);">${round}</span>
+                        <div class="bracket-teams">${home} - ${away}</div>
+                        <div class="bracket-score">${scoreH} - ${scoreA}</div>
+                    </div>`;
+                });
+                tableWrap.innerHTML = html;
+            } catch(e) {
+                classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore tabellone.</td></tr>';
+            }
+            return;
+        }
+
+        // Altrimenti classifica normale
         classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
         const trySeason = async (season) => {
             const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
@@ -684,9 +700,7 @@
         };
         try {
             let data = await trySeason(seasonYear);
-            if (!data || !data.standings?.entries?.length) {
-                data = await trySeason(null);
-            }
+            if (!data || !data.standings?.entries?.length) data = await trySeason(null);
             const entries = data?.standings?.entries || [];
             if (entries.length===0) {
                 classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica non disponibile.</td></tr>';
