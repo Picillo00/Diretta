@@ -88,58 +88,78 @@
         .start-time { font-size: 10px; color: var(--text3); margin-top: 3px; font-weight: 500; }
         @keyframes pulse-live { 0%,100% { opacity: 1; } 50% { opacity: 0.55; } }
 
+        /* --- DETTAGLIO PARTITA (slider formazioni / classifica) --- */
         #match-detail {
-            display: none; height: 100%; overflow-y: auto; padding: 14px; background: var(--bg); padding-bottom: 50px;
+            display: none; height: 100%; overflow: hidden; background: var(--bg);
+            position: relative;
         }
         #match-detail.active { display: block; }
-        #match-detail::-webkit-scrollbar { display: none; }
 
-        .detail-header {
+        #detail-slider {
+            display: flex; height: 100%; width: 200%; transition: transform 0.3s ease;
+        }
+        #detail-slider.show-classifica {
+            transform: translateX(-50%);
+        }
+
+        .detail-panel {
+            width: 50%; height: 100%; overflow-y: auto; padding: 14px; padding-bottom: 50px;
+        }
+        .detail-panel::-webkit-scrollbar { display: none; }
+
+        /* Pannello formazioni */
+        #panel-formazioni .detail-header {
             text-align: center; margin-bottom: 16px; background: var(--surface); border-radius: var(--radius);
             padding: 16px 14px; box-shadow: var(--shadow);
         }
         .detail-header .league-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
         .detail-header .league-name { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
-        .btn-standings {
-            background: var(--surface2); color: #fff; border: 1px solid var(--border); padding: 5px 10px;
-            border-radius: 14px; font-size: 10px; font-weight: 700; cursor: pointer; letter-spacing: 0.4px;
-            white-space: nowrap; transition: 0.2s;
+        .swipe-hint-detail {
+            font-size: 9px; color: var(--text3); background: var(--surface2); padding: 3px 10px;
+            border-radius: 12px; letter-spacing: 0.5px; font-weight: 600; margin-left: 8px;
         }
-        .btn-standings:active { background: #334155; transform: scale(0.95); }
         .detail-teams { font-size: 18px; font-weight: 800; margin-top: 6px; letter-spacing: 0.3px; }
         .detail-score { font-size: 36px; font-weight: 900; margin: 6px 0; letter-spacing: 2px; font-variant-numeric: tabular-nums; font-family: 'Inter','SF Mono',monospace; }
         .detail-status { font-size: 12px; font-weight: 700; padding: 4px 12px; border-radius: 14px; display: inline-block; letter-spacing: 0.4px; }
 
-        /* Formazioni swipe */
-        #det-lineups { margin-bottom: 14px; position: relative; }
-        .lineup-swipe-container {
-            background: var(--surface); border-radius: var(--radius); padding: 12px 10px; box-shadow: var(--shadow);
-            min-height: 160px; transition: opacity 0.2s;
+        .lineups-grid {
+            display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 14px;
         }
-        .lineup-swipe-title {
-            font-size: 13px; font-weight: 800; text-align: center; margin-bottom: 8px; color: #fff;
-            letter-spacing: 0.5px; display: flex; align-items: center; justify-content: center; gap: 6px;
+        .lineup-col {
+            background: var(--surface); border-radius: var(--radius); padding: 10px; box-shadow: var(--shadow);
         }
-        .lineup-swipe-title .swipe-hint { font-size: 9px; color: var(--text3); font-weight: 500; }
+        .lineup-title {
+            font-size: 12px; font-weight: 800; text-align: center; padding-bottom: 8px;
+            border-bottom: 1px solid var(--border); margin-bottom: 6px; letter-spacing: 0.3px; color: #fff;
+        }
         .lineup-list { list-style: none; font-size: 11px; }
         .lineup-list li {
-            padding: 4px 0; display: flex; align-items: center; justify-content: space-between; gap: 4px;
-            border-bottom: 1px solid rgba(255,255,255,0.03); min-height: 24px;
+            padding: 3px 0; display: flex; align-items: center; justify-content: space-between; gap: 4px;
+            border-bottom: 1px solid rgba(255,255,255,0.03); min-height: 22px;
         }
         .lineup-list li .plyr-name { flex: 1; font-weight: 600; font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .lineup-list li .plyr-badges { display: flex; gap: 3px; align-items: center; flex-shrink: 0; }
-        .lineup-list li .pos-tag { color: var(--text3); font-size: 9px; font-weight: 700; background: var(--surface2); padding: 2px 6px; border-radius: 8px; min-width: 26px; text-align: center; flex-shrink: 0; }
+        .lineup-list li .pos-tag {
+            color: var(--text3); font-size: 9px; font-weight: 700; background: var(--surface2);
+            padding: 2px 6px; border-radius: 8px; min-width: 26px; text-align: center; flex-shrink: 0;
+        }
         .event-badge {
-            font-size: 9px; font-weight: 700; background: var(--surface2); border-radius: 8px; padding: 1px 5px;
-            display: flex; align-items: center; gap: 2px; letter-spacing: 0.3px; white-space: nowrap;
+            font-size: 9px; font-weight: 700; background: var(--surface2); border-radius: 8px;
+            padding: 1px 5px; display: flex; align-items: center; gap: 2px; letter-spacing: 0.3px;
+            white-space: nowrap;
         }
         .event-badge.goal { color: #22c55e; }
         .event-badge.yellow { color: #eab308; }
         .event-badge.red { color: #ef4444; }
-        .subs-label-lineup { font-size: 10px; font-weight: 700; margin-top: 8px; color: var(--text2); letter-spacing: 0.5px; padding: 4px 0; border-top: 1px solid var(--border); }
-        .sub-detail { font-size: 9px; color: var(--text3); font-weight: 500; }
+        .subs-label-lineup {
+            font-size: 10px; font-weight: 700; margin-top: 8px; color: var(--text2);
+            letter-spacing: 0.5px; padding: 4px 0; border-top: 1px solid var(--border);
+        }
 
-        .section-title-timeline { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: var(--text2); margin-bottom: 8px; padding-left: 4px; }
+        .section-title-timeline {
+            font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px;
+            color: var(--text2); margin-bottom: 8px; padding-left: 4px;
+        }
         .timeline { display: flex; flex-direction: column; gap: 6px; }
         .event {
             background: var(--surface); padding: 10px 12px; border-radius: var(--radius-sm); font-size: 13px;
@@ -149,31 +169,36 @@
         .event .ev-time { font-weight: 800; min-width: 32px; font-size: 12px; flex-shrink: 0; letter-spacing: 0.3px; }
         .event .ev-text { font-weight: 500; font-size: 12px; line-height: 1.4; }
 
-        /* Modale classifica */
-        #standings-modal {
-            display: none; position: fixed; inset: 0; z-index: 100; background: rgba(0,0,0,0.92);
-            flex-direction: column; padding: 10px;
+        /* Pannello classifica */
+        #panel-classifica {
+            display: flex; flex-direction: column;
         }
-        #standings-modal.active { display: flex; }
-        #standings-modal .modal-header {
+        #panel-classifica .classifica-header {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 10px 14px; background: var(--surface); border-radius: var(--radius) var(--radius) 0 0;
-            border-bottom: 1px solid var(--border);
+            padding: 10px 14px; background: var(--surface); border-radius: var(--radius); margin-bottom: 10px;
         }
-        #standings-modal .modal-title { font-weight: 800; font-size: 14px; letter-spacing: 0.5px; }
-        #standings-modal .modal-close {
-            background: var(--surface2); color: #fff; border: none; padding: 6px 14px; border-radius: 16px;
-            font-weight: 700; cursor: pointer; font-size: 12px; transition: 0.2s;
+        #panel-classifica .classifica-title {
+            font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
         }
-        #standings-modal .modal-close:active { background: #334155; transform: scale(0.95); }
-        #standings-table-wrap { flex: 1; overflow-y: auto; background: var(--surface); border-radius: 0 0 var(--radius) var(--radius); padding: 4px 8px; }
-        #standings-table-wrap::-webkit-scrollbar { display: none; }
-        #standings-table { width: 100%; border-collapse: collapse; font-size: 11px; }
-        #standings-table th { color: var(--text3); font-weight: 600; padding: 8px 4px; text-align: center; border-bottom: 1px solid var(--border); font-size: 9px; letter-spacing: 0.5px; position: sticky; top: 0; background: var(--surface); }
-        #standings-table th:first-child { text-align: left; padding-left: 8px; }
-        #standings-table td { padding: 7px 4px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03); font-weight: 500; }
-        #standings-table td:first-child { text-align: left; font-weight: 700; padding-left: 8px; }
-        #standings-table .pos-cell { font-weight: 800; width: 24px; }
+        #classifica-table-wrap {
+            flex: 1; overflow-y: auto; background: var(--surface); border-radius: var(--radius); padding: 4px 8px;
+        }
+        #classifica-table-wrap::-webkit-scrollbar { display: none; }
+        #classifica-table {
+            width: 100%; border-collapse: collapse; font-size: 11px;
+        }
+        #classifica-table th {
+            color: var(--text3); font-weight: 600; padding: 8px 4px; text-align: center;
+            border-bottom: 1px solid var(--border); font-size: 9px; letter-spacing: 0.5px;
+            position: sticky; top: 0; background: var(--surface);
+        }
+        #classifica-table th:first-child { text-align: left; padding-left: 8px; }
+        #classifica-table td {
+            padding: 7px 4px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03);
+            font-weight: 500;
+        }
+        #classifica-table td:first-child { text-align: left; font-weight: 700; padding-left: 8px; }
+        #classifica-table .pos-cell { font-weight: 800; width: 24px; }
 
         #footer {
             position: fixed; bottom: 0; width: 100%; text-align: center; font-size: 9px;
@@ -195,42 +220,36 @@
 
 <div id="main-view">
     <div id="matches-list"></div>
+
     <div id="match-detail">
-        <div class="detail-header">
-            <div class="league-row">
-                <span class="league-name" id="det-league"></span>
-                <button class="btn-standings" id="btn-standings">📊 CLASSIFICA</button>
-            </div>
-            <div class="detail-teams" id="det-teams">Squadra A - Squadra B</div>
-            <div class="detail-score" id="det-score">0 - 0</div>
-            <span class="detail-status" id="det-status"></span>
-        </div>
-
-        <!-- Formazioni con swipe -->
-        <div id="det-lineups" style="display:none;">
-            <div class="lineup-swipe-container" id="lineup-swipe-container">
-                <div class="lineup-swipe-title" id="lineup-team-title">
-                    <span id="lineup-team-name">HOME</span>
-                    <span class="swipe-hint">← swipe →</span>
+        <div id="detail-slider">
+            <!-- PANNELLO FORMAZIONI + TIMELINE -->
+            <div id="panel-formazioni" class="detail-panel">
+                <div class="detail-header">
+                    <div class="league-row">
+                        <span class="league-name" id="det-league"></span>
+                        <span class="swipe-hint-detail">← Classifica | Formazioni →</span>
+                    </div>
+                    <div class="detail-teams" id="det-teams">Squadra A - Squadra B</div>
+                    <div class="detail-score" id="det-score">0 - 0</div>
+                    <span class="detail-status" id="det-status"></span>
                 </div>
-                <ul class="lineup-list" id="lineup-list-content"></ul>
-                <div id="lineup-subs-content"></div>
+                <div class="lineups-grid" id="lineups-grid-container"></div>
+                <div class="section-title-timeline">📋 MOMENTI SALIENTI</div>
+                <div class="timeline" id="det-timeline"></div>
+            </div>
+
+            <!-- PANNELLO CLASSIFICA -->
+            <div id="panel-classifica" class="detail-panel">
+                <div class="classifica-header">
+                    <span class="classifica-title" id="classifica-title">Classifica</span>
+                    <span class="swipe-hint-detail">← Formazioni | Classifica →</span>
+                </div>
+                <div id="classifica-table-wrap">
+                    <table id="classifica-table"></table>
+                </div>
             </div>
         </div>
-
-        <div class="section-title-timeline">📋 MOMENTI SALIENTI</div>
-        <div class="timeline" id="det-timeline"></div>
-    </div>
-</div>
-
-<!-- MODALE CLASSIFICA -->
-<div id="standings-modal">
-    <div class="modal-header">
-        <span class="modal-title" id="standings-title">Classifica</span>
-        <button class="modal-close" id="standings-close">✕ CHIUDI</button>
-    </div>
-    <div id="standings-table-wrap">
-        <table id="standings-table"></table>
     </div>
 </div>
 
@@ -273,23 +292,15 @@
     let inDetailView = false;
     let currentMatches = [];
     let currentDetailMatch = null;
-    // Per swipe formazioni
-    let currentLineupIndex = 0; // 0: home, 1: away
-    let lineupTeams = []; // array di due oggetti: { name, players: [{name,pos,events:[]},...], subs: [...] }
+    let showingClassifica = false;
 
     const matchesListEl = document.getElementById('matches-list');
     const matchDetailEl = document.getElementById('match-detail');
+    const detailSlider = document.getElementById('detail-slider');
     const btnHome = document.getElementById('btn-home');
     const sportTitleEl = document.getElementById('sport-title');
-    const standingsModal = document.getElementById('standings-modal');
-    const standingsClose = document.getElementById('standings-close');
-    const standingsTable = document.getElementById('standings-table');
-    const standingsTitle = document.getElementById('standings-title');
-    const btnStandings = document.getElementById('btn-standings');
-    const lineupSwipeContainer = document.getElementById('lineup-swipe-container');
-    const lineupListContent = document.getElementById('lineup-list-content');
-    const lineupSubsContent = document.getElementById('lineup-subs-content');
-    const lineupTeamNameEl = document.getElementById('lineup-team-name');
+    const classificaTable = document.getElementById('classifica-table');
+    const classificaTitleEl = document.getElementById('classifica-title');
 
     const positionIT = { "GK":"POR", "DF":"DIF", "MF":"CEN", "FW":"ATT" };
 
@@ -310,27 +321,39 @@
         return cleaned.toLowerCase();
     }
 
-    function extractSubNames(text) {
-        if (!text) return {outName:null,inName:null};
-        const cleaned = text.replace(/\(.*?\)/g,'').trim();
-        const parts = cleaned.split(/ - |, |: /);
-        let outName=null,inName=null;
-        for (let p of parts) {
-            const lower=p.toLowerCase();
-            if (lower.includes('entra')||lower.includes('in')) inName=p.replace(/entra|in/gi,'').trim();
-            else if (lower.includes('esce')||lower.includes('out')) outName=p.replace(/esce|out/gi,'').trim();
-        }
-        if (!outName && !inName && parts.length>=2) { outName=parts[0].trim(); inName=parts[parts.length-1].trim(); }
-        return { outName:outName?outName.toLowerCase():null, inName:inName?inName.toLowerCase():null };
-    }
-
     datePicker.addEventListener('change', ()=>loadDataAndRender());
     btnHome.addEventListener('click', ()=>loadDataAndRender());
-    standingsClose.addEventListener('click', ()=>standingsModal.classList.remove('active'));
-    standingsModal.addEventListener('pointerdown',(e)=>{ if(e.target===standingsModal) standingsModal.classList.remove('active'); });
-    btnStandings.addEventListener('click', ()=>{
-        if (currentDetailMatch) openStandings(currentDetailMatch.leagueSlug, currentDetailMatch.league, currentDetailMatch.seasonYear);
+
+    // Swipe globale su #match-detail per cambiare pannello (formazioni ↔ classifica)
+    let detailTouchStartX = 0;
+    matchDetailEl.addEventListener('pointerdown', e => {
+        detailTouchStartX = e.clientX;
     });
+    matchDetailEl.addEventListener('pointerup', e => {
+        if (!inDetailView) return;
+        const diffX = e.clientX - detailTouchStartX;
+        // Soglia di swipe
+        if (Math.abs(diffX) > 40) {
+            if (diffX < -30 && !showingClassifica) {
+                // swipe sinistra -> vai a classifica
+                showClassificaPanel();
+            } else if (diffX > 30 && showingClassifica) {
+                // swipe destra -> torna a formazioni
+                showFormazioniPanel();
+            }
+        }
+    });
+
+    function showClassificaPanel() {
+        showingClassifica = true;
+        detailSlider.classList.add('show-classifica');
+        // carica classifica se non già fatto
+        if (currentDetailMatch) loadClassifica(currentDetailMatch.leagueSlug, currentDetailMatch.league, currentDetailMatch.seasonYear);
+    }
+    function showFormazioniPanel() {
+        showingClassifica = false;
+        detailSlider.classList.remove('show-classifica');
+    }
 
     // --- FETCH PARTITE ---
     async function fetchRealData(sportName, dateStr) {
@@ -439,15 +462,19 @@
         });
     }
 
-    // --- DETTAGLIO PARTITA con formazioni swipe e eventi per giocatore ---
+    // --- DETTAGLIO PARTITA ---
     async function openDetail(match) {
         currentDetailMatch = match;
         inDetailView = true;
+        showingClassifica = false;
+        detailSlider.classList.remove('show-classifica');
         matchesListEl.style.display = 'none';
         matchDetailEl.classList.add('active');
         btnHome.classList.add('active');
+
         const config = sportConfigs[sportsList[currentSportIndex]];
         const color = config.color;
+
         document.getElementById('det-league').textContent = '🏆 '+match.league;
         document.getElementById('det-teams').textContent = match.home+' - '+match.away;
         document.getElementById('det-score').textContent = match.scoreH+' - '+match.scoreA;
@@ -456,15 +483,19 @@
         statusEl.textContent = match.status;
         statusEl.style.color = match.isLive?'#fff':'var(--text3)';
         statusEl.style.background = match.isLive?'var(--live-red)':'var(--surface2)';
+
         const timelineEl = document.getElementById('det-timeline');
-        const detLineups = document.getElementById('det-lineups');
-        detLineups.style.display = 'none';
+        const lineupsContainer = document.getElementById('lineups-grid-container');
+        lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni...</div>';
         timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento dati partita...</div>';
+
+        // Inizializza classifica a vuoto
+        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica in caricamento...</td></tr>';
 
         try {
             const res = await fetch(match.summaryUrl);
             const summaryData = await res.json();
-            // Estrai stagione (per classifica)
+
             let seasonYear = new Date().getFullYear();
             if (summaryData?.header?.season?.year) seasonYear = summaryData.header.season.year;
             else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
@@ -473,8 +504,8 @@
             const competitors = summaryData?.gamepackage?.competition?.competitors;
             const allKeyEvents = summaryData?.keyEvents || [];
 
-            // Mappa eventi per giocatore con minuto
-            const playerEvents = {}; // chiave: nome minuscolo -> [{type:'goal'/'yellow'/'red', minute:'23'}]
+            // Mappa eventi per giocatore
+            const playerEvents = {};
             const importantTypes = ['goal','yellow','red','penalty','injury','assist','var','own goal','missed penalty'];
             allKeyEvents.forEach(ev => {
                 const t = (ev.type?.text||'').toLowerCase();
@@ -495,40 +526,60 @@
                 playerEvents[playerName].push({type, minute});
             });
 
-            // Costruzione dati formazioni
-            lineupTeams = [];
+            // Costruisci lineups
+            lineupsContainer.innerHTML = '';
             if (competitors && competitors.length===2) {
-                const processTeam = (comp) => {
+                const buildCol = (comp, sideLabel) => {
                     const roster = comp.roster?.entries || [];
                     const starters = roster.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
                     const subs = roster.filter(p=>!p.starter);
                     const teamName = comp.team?.shortDisplayName || comp.team?.name || '???';
-                    const mapPlayer = (p) => {
+                    let html = `<div class="lineup-col"><div class="lineup-title">${teamName}</div><ul class="lineup-list">`;
+                    starters.forEach(p=>{
                         const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
                         const nameLower = name.toLowerCase();
                         const pos = p.position?.abbreviation ? (positionIT[p.position.abbreviation]||p.position.abbreviation) : '';
-                        return {
-                            name, nameLower, pos,
-                            events: playerEvents[nameLower] || []
-                        };
-                    };
-                    return {
-                        name: teamName,
-                        starters: starters.map(mapPlayer),
-                        subs: subs.map(mapPlayer)
-                    };
+                        let eventBadges = '';
+                        const evts = playerEvents[nameLower] || [];
+                        evts.forEach(ev=>{
+                            let cls='';
+                            if (ev.type==='goal') cls='goal';
+                            else if (ev.type==='yellow') cls='yellow';
+                            else if (ev.type==='red') cls='red';
+                            eventBadges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
+                        });
+                        html += `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${eventBadges}<span class="pos-tag">${pos}</span></span></li>`;
+                    });
+                    html += `</ul>`;
+                    if (subs.length>0) {
+                        html += `<div class="subs-label-lineup">🪑 Panchina</div><ul class="lineup-list">`;
+                        subs.forEach(p=>{
+                            const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
+                            const nameLower = name.toLowerCase();
+                            let eventBadges = '';
+                            const evts = playerEvents[nameLower] || [];
+                            evts.forEach(ev=>{
+                                let cls='';
+                                if (ev.type==='goal') cls='goal';
+                                else if (ev.type==='yellow') cls='yellow';
+                                else if (ev.type==='red') cls='red';
+                                eventBadges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
+                            });
+                            html += `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${eventBadges}</span></li>`;
+                        });
+                        html += `</ul>`;
+                    }
+                    html += `</div>`;
+                    return html;
                 };
                 const homeComp = competitors.find(c=>c.homeAway==='home') || competitors[0];
                 const awayComp = competitors.find(c=>c.homeAway==='away') || competitors[1];
-                lineupTeams = [processTeam(homeComp), processTeam(awayComp)];
+                lineupsContainer.innerHTML = buildCol(homeComp) + buildCol(awayComp);
+            } else {
+                lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili.</div>';
             }
 
-            // Renderizza prima formazione (home)
-            currentLineupIndex = 0;
-            renderActiveLineup();
-            detLineups.style.display = 'block';
-
-            // Timeline eventi importanti filtrati
+            // Timeline eventi importanti
             const filteredEvents = allKeyEvents.filter(ev=>{
                 const t=(ev.type?.text||'').toLowerCase();
                 return importantTypes.some(k=>t.includes(k));
@@ -546,90 +597,33 @@
                     else if (t.includes('injury')) icon='🩹';
                     else if (t.includes('assist')) icon='👟';
                     else if (t.includes('var')) icon='📺';
-                    const rawText = ev.text||ev.shortText||'Evento';
                     timelineEl.innerHTML += `
                         <div class="event">
                             <span class="ev-time" style="color:${color}">${ev.clock?.displayValue||''}</span>
                             <span class="ev-icon">${icon}</span>
-                            <span class="ev-text">${translateEventText(rawText)}</span>
+                            <span class="ev-text">${translateEventText(ev.text||ev.shortText||'Evento')}</span>
                         </div>`;
                 });
             } else {
                 timelineEl.innerHTML = '<div class="loading-text" style="color:var(--text3);">📋 Nessun evento saliente disponibile.</div>';
             }
         } catch(e) {
+            lineupsContainer.innerHTML = '<div class="loading-text">Errore caricamento formazioni.</div>';
             timelineEl.innerHTML = '<div class="loading-text" style="color:#ef4444;">⚠️ Errore di connessione al server eventi.</div>';
         }
     }
 
-    function renderActiveLineup() {
-        if (!lineupTeams.length) return;
-        const team = lineupTeams[currentLineupIndex];
-        lineupTeamNameEl.textContent = team.name;
-        let html = '';
-        team.starters.forEach(p=>{
-            let eventBadges = '';
-            p.events.forEach(ev=>{
-                let cls='';
-                if (ev.type==='goal') cls='goal';
-                else if (ev.type==='yellow') cls='yellow';
-                else if (ev.type==='red') cls='red';
-                else cls='';
-                eventBadges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
-            });
-            html += `<li><span class="plyr-name">${p.name}</span><span class="plyr-badges">${eventBadges}<span class="pos-tag">${p.pos}</span></span></li>`;
-        });
-        lineupListContent.innerHTML = html;
-        let subsHtml = '';
-        if (team.subs.length>0) {
-            subsHtml = '<div class="subs-label-lineup">🪑 Panchina</div><ul class="lineup-list">';
-            team.subs.forEach(p=>{
-                let eventBadges = '';
-                p.events.forEach(ev=>{
-                    let cls='';
-                    if (ev.type==='goal') cls='goal';
-                    else if (ev.type==='yellow') cls='yellow';
-                    else if (ev.type==='red') cls='red';
-                    eventBadges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
-                });
-                subsHtml += `<li><span class="plyr-name">${p.name}</span><span class="plyr-badges">${eventBadges}</span></li>`;
-            });
-            subsHtml += '</ul>';
-        }
-        lineupSubsContent.innerHTML = subsHtml;
-    }
-
-    // Swipe formazioni (neural band ready)
-    let lineupTouchStartX = 0;
-    lineupSwipeContainer.addEventListener('pointerdown', e => {
-        lineupTouchStartX = e.clientX;
-        e.stopPropagation();
-    });
-    lineupSwipeContainer.addEventListener('pointerup', e => {
-        const diffX = e.clientX - lineupTouchStartX;
-        if (Math.abs(diffX) > 35 && lineupTeams.length===2) {
-            if (diffX < -25) {
-                currentLineupIndex = 1; // away
-            } else if (diffX > 25) {
-                currentLineupIndex = 0; // home
-            }
-            renderActiveLineup();
-        }
-        e.stopPropagation();
-    });
-
-    // --- CLASSIFICA con stagione ---
-    async function openStandings(leagueSlug, leagueName, seasonYear) {
-        standingsTitle.textContent = '📊 '+(leagueName||leagueSlug);
-        standingsTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
-        standingsModal.classList.add('active');
+    // --- CLASSIFICA EMBEDDED ---
+    async function loadClassifica(leagueSlug, leagueName, seasonYear) {
+        classificaTitleEl.textContent = '📊 '+(leagueName||leagueSlug);
+        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
         try {
             const standingsUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings?season=${seasonYear||new Date().getFullYear()}`;
             const res = await fetch(standingsUrl);
             const data = await res.json();
             const entries = data?.standings?.entries || [];
             if (entries.length===0) {
-                standingsTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica non disponibile.</td></tr>';
+                classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica non disponibile.</td></tr>';
                 return;
             }
             let html = `<thead><tr><th>#</th><th>Squadra</th><th>PG</th><th>V</th><th>N</th><th>P</th><th>GF:GS</th><th>Pt</th></tr></thead><tbody>`;
@@ -643,19 +637,19 @@
                 </tr>`;
             });
             html += '</tbody>';
-            standingsTable.innerHTML = html;
+            classificaTable.innerHTML = html;
         } catch(e) {
-            standingsTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore nel caricamento classifica.</td></tr>';
+            classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:#ef4444;">Errore nel caricamento classifica.</td></tr>';
         }
     }
 
-    // --- GESTURE GLOBALI ---
+    // --- GESTURE GLOBALI (lista partite) ---
     let globalStartX=0, globalStartY=0;
     document.addEventListener('pointerdown', e => {
         globalStartX = e.clientX; globalStartY = e.clientY;
     });
     document.addEventListener('pointerup', e => {
-        if (e.target.closest('#date-picker') || e.target.closest('#standings-modal') || e.target.closest('.btn-standings') || e.target.closest('#lineup-swipe-container')) return;
+        if (e.target.closest('#date-picker') || e.target.closest('#match-detail')) return;
         const diffX = e.clientX - globalStartX;
         const diffY = Math.abs(e.clientY - globalStartY);
         if (Math.abs(diffX)<16 && diffY<16) {
