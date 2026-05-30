@@ -351,6 +351,11 @@
     function showFormazioniPanel() {
         showingClassifica = false;
         detailSlider.classList.remove('show-classifica');
+        // ricarica formazioni in tempo reale quando torni al pannello
+        if (currentDetailMatch) {
+            // riapri detail per aggiornare
+            openDetail(currentDetailMatch);
+        }
     }
 
     async function fetchRealData(sportName, dateStr) {
@@ -359,6 +364,7 @@
         const fetchPromises = config.leagues.map(async (leagueObj) => {
             try {
                 const { slug, url } = leagueObj;
+                const bustUrl = url + (url.includes('?') ? '&' : '?') + 'dates=' + espnDate + '&_=' + Date.now();
                 const fetchUrl = `${url}?dates=${dateStr}`;
                 const response = await fetch(fetchUrl);
                 if (!response.ok) return [];
@@ -453,7 +459,7 @@
                     <div class="team-name"><img src="${match.awayLogo}" class="team-logo" onerror="this.style.display='none'"> ${match.away}</div>
                 </div>
                 <div class="score-info">
-                    <span class="score">${match.scoreH} - ${match.scoreA}</span>
+                    <span class="score">${match.scoreH} - ${match.scoreA}${match.penaltyH!=null ? ` <span style='font-size:11px;color:var(--text2);font-weight:600;'>(${match.penaltyH}-${match.penaltyA} r)</span>` : ''}</span>
                     <span class="status-badge ${statusClass}">${match.status}</span>
                     <span class="start-time">${match.state==='pre'?'🕐 ':'⏱️ '}${match.time}</span>
                 </div>`;
@@ -491,7 +497,7 @@
         classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica disponibile con swipe →</td></tr>';
 
         try {
-            const res = await fetch(match.summaryUrl);
+            const res = await fetch(match.summaryUrl + (match.summaryUrl.includes('?') ? '&' : '?') + '_=' + Date.now());
             const summaryData = await res.json();
 
             let seasonYear = new Date().getFullYear();
@@ -516,6 +522,10 @@
             if (homePenalty !== undefined && awayPenalty !== undefined && homePenalty !== null && awayPenalty !== null) {
                 penaltyEl.textContent = `(${homePenalty} - ${awayPenalty} d.c.r.)`;
                 penaltyEl.style.display = 'block';
+                match.penaltyH = homePenalty;
+                match.penaltyA = awayPenalty;
+                // aggiorna anche score nel titolo
+                document.getElementById('det-score').textContent = match.scoreH+' - '+match.scoreA + ` (${homePenalty}-${awayPenalty} rig.)`;
             }
 
             const allKeyEvents = summaryData?.keyEvents || [];
@@ -607,7 +617,7 @@
             // Se ancora vuoto, proviamo endpoint lineups dedicato
             if ((!homeRoster || homeRoster.length===0)) {
                 try {
-                    const lineupsUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${match.leagueSlug}/lineups?event=${match.id}`;
+                    const lineupsUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${match.leagueSlug}/lineups?event=${match.id}&_=${Date.now()}`;
                     const lineupsRes = await fetch(lineupsUrl);
                     if (lineupsRes.ok) {
                         const lineupsData = await lineupsRes.json();
@@ -627,7 +637,11 @@
             if (homeRoster && homeRoster.length>0 && awayRoster && awayRoster.length>0) {
                 lineupsContainer.innerHTML = buildFromRoster(homeRoster, homeTeamName, homeLogo) + buildFromRoster(awayRoster, awayTeamName, awayLogo);
             } else {
-                lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
+                lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili al momento.<br><span style="font-size:11px;color:var(--text3)">Verranno caricate automaticamente quando disponibili (aggiornamento live).</span></div>';
+                // se live, riprova tra 30s
+                if (match.isLive) {
+                    setTimeout(()=>{ if(inDetailView && currentDetailMatch?.id===match.id) openDetail(match); }, 30000);
+                }
             }
 
             const filteredEvents = allKeyEvents.filter(ev=>{
@@ -667,8 +681,9 @@
         classificaTitleEl.innerHTML = '📊 '+(leagueName||leagueSlug);
         classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
         const trySeason = async (season) => {
-            const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
-            const res = await fetch(url);
+            const base = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
+            const url = base + (base.includes('?') ? '&' : '?') + '_=' + Date.now();
+            const res = await fetch(bustUrl);
             if (!res.ok) return null;
             return await res.json();
         };
