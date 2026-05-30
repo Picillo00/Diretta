@@ -118,6 +118,7 @@
             flex-direction: column;
             gap: 8px;
             padding-bottom: 40px;
+            -webkit-overflow-scrolling: touch;
         }
         #matches-list::-webkit-scrollbar {
             display: none;
@@ -246,7 +247,7 @@
             50% { opacity: 0.55; }
         }
 
-        /* ─── MENU A TENDINA CAMPIONATI SECONDARI ─── */
+        /* ─── MENU A TENDINA SCORRIBILE ─── */
         .collapsible-toggle {
             display: flex;
             align-items: center;
@@ -302,12 +303,14 @@
             order: 1000;
         }
         .secondary-matches-container.expanded {
-            max-height: 2000px;
+            max-height: 60vh;           /* altezza fissa con scroll interno */
             opacity: 1;
             margin-top: 2px;
+            overflow-y: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
-        /* DETTAGLIO PARTITA */
+        /* DETTAGLIO PARTITA (invariato) */
         #match-detail {
             display: none;
             height: 100%;
@@ -839,6 +842,7 @@
             datePicker.addEventListener('change', () => loadDataAndRender());
             btnHome.addEventListener('click', () => loadDataAndRender());
 
+            // Swipe nel dettaglio (formazioni/classifica/partite)
             let detailStartX = 0;
             matchDetailEl.addEventListener('pointerdown', e => { detailStartX = e.clientX; });
             matchDetailEl.addEventListener('pointerup', e => {
@@ -1022,11 +1026,22 @@
                 }
             }
 
+            // ─── TAP sulle partite (funziona anche su Ray‑Ban Meta) ───
+            matchesListEl.addEventListener('click', (e) => {
+                const card = e.target.closest('.match-card');
+                if (!card || inDetailView) return;
+                // Non aprire se stiamo cliccando sul toggle
+                if (e.target.closest('#secondary-toggle')) return;
+                const matchId = card.dataset.id;
+                const match = currentMatches.find(m => m.id === matchId);
+                if (match) openDetail(match);
+            });
+
+            // ─── Apri/chiudi menu leghe secondarie ───
             matchesListEl.addEventListener('click', (e) => {
                 const toggleBtn = e.target.closest('#secondary-toggle');
                 if (!toggleBtn) return;
                 e.stopPropagation();
-                e.preventDefault();
                 const container = document.getElementById('secondary-container');
                 if (!container) return;
                 const isOpen = container.classList.contains('expanded');
@@ -1342,21 +1357,19 @@
                 }
             }
 
-            let globalStartX = 0, globalStartY = 0;
-            document.addEventListener('pointerdown', e => { globalStartX = e.clientX; globalStartY = e.clientY; });
+            // ─── SWIPE globale per cambiare sport (solo nella lista) ───
+            let globalStartX = 0;
+            document.addEventListener('pointerdown', e => {
+                // Non intercettare swipe dentro il dettaglio o il date picker
+                if (e.target.closest('#match-detail') || e.target.closest('#date-picker')) return;
+                globalStartX = e.clientX;
+            });
             document.addEventListener('pointerup', e => {
-                if (e.target.closest('#date-picker') || e.target.closest('#match-detail') || e.target.closest('#secondary-toggle')) return;
-                const diffX = e.clientX - globalStartX, diffY = Math.abs(e.clientY - globalStartY);
-                if (Math.abs(diffX) < 16 && diffY < 16) {
-                    const card = e.target.closest('.match-card');
-                    if (card && !inDetailView) {
-                        const matchId = card.dataset.id;
-                        const match = currentMatches.find(m => m.id === matchId);
-                        if (match) openDetail(match);
-                    }
-                    return;
-                }
                 if (inDetailView) return;
+                if (e.target.closest('#match-detail') || e.target.closest('#date-picker') || e.target.closest('#secondary-toggle')) return;
+                const diffX = e.clientX - globalStartX;
+                // Solo swipe, non tap
+                if (Math.abs(diffX) < 30) return;
                 if (diffX > 55) {
                     currentSportIndex = (currentSportIndex === 0) ? sportsList.length - 1 : currentSportIndex - 1;
                     loadDataAndRender();
@@ -1365,6 +1378,7 @@
                     loadDataAndRender();
                 }
             });
+
             window.addEventListener('keydown', (e) => {
                 if (e.key === 'Backspace' && inDetailView) { e.preventDefault(); loadDataAndRender(); }
                 if (!inDetailView && e.key === 'ArrowRight') { currentSportIndex = (currentSportIndex === sportsList.length - 1) ? 0 : currentSportIndex + 1; loadDataAndRender(); }
