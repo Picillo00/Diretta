@@ -158,27 +158,34 @@
             transform: scale(0.985);
             background: #1a2338;
         }
-        .team-info {
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            font-size: 15px;
-            font-weight: 700;
-            line-height: 1.2;
-            min-width: 0;
-            flex: 1;
-        }
-        .league-tag {
-            font-size: 9px;
-            color: var(--text3);
-            text-transform: uppercase;
-            letter-spacing: 0.6px;
-            font-weight: 600;
-            margin-bottom: 1px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
+		.team-info {
+			display: flex;
+			flex-direction: column;   /* mantiene il campionato sopra */
+			gap: 3px;
+			font-size: 15px;
+			font-weight: 700;
+			line-height: 1.2;
+			min-width: 0;
+			flex: 1;
+		}
+		.team-name {
+			display: inline-flex;      /* invece di block, per stare affiancate */
+			align-items: center;
+			gap: 6px;
+			white-space: nowrap;       /* evita spezzature interne */
+		}
+		.team-name:first-child::after {
+			content: " – ";            /* trattino separatore */
+			margin-left: 4px;
+			font-weight: 400;
+			color: var(--text3);
+		}
+		/* Per evitare che la riga vada a capo se troppo lunga, opzionale: */
+		.team-info .league-tag {
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
         .team-name {
             display: flex;
             align-items: center;
