@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
 <meta name="theme-color" content="#000000">
-<title>HUD Real-Time Live Scores</title>
+<title>HUD Global Live Scores</title>
 <style>
   :root {
     --bg: #000000;
@@ -32,6 +32,8 @@
     font-size: 14px; font-weight: bold; background: #000; z-index: 10;
   }
   
+  .header-left { display: flex; align-items: center; gap: 10px; }
+
   #btn-home {
     display: none; 
     background: #333; color: #fff; border: none; padding: 4px 10px;
@@ -40,14 +42,21 @@
   #btn-home.active { display: block; }
   
   #sport-title { font-size: 18px; text-transform: uppercase; letter-spacing: 1px; }
-  #date-text { font-size: 12px; color: var(--dim); }
+  
+  /* TENDINA DATA */
+  #date-picker {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--dim); padding: 5px 8px;
+    border-radius: 6px; font-family: inherit; font-size: 13px;
+    color-scheme: dark; outline: none; cursor: pointer;
+  }
 
   /* --- VISTA PRINCIPALE --- */
   #main-view {
     height: calc(100% - 45px); width: 100%; position: relative;
   }
 
-  /* --- LISTA PARTITE (HOME) --- */
+  /* --- LISTA PARTITE --- */
   #matches-list {
     height: 100%; overflow-y: auto; padding: 10px; display: flex; flex-direction: column; gap: 10px;
     padding-bottom: 30px;
@@ -62,8 +71,9 @@
   .match-card:active { transform: scale(0.98); background: #222; }
 
   .team-info { display: flex; flex-direction: column; gap: 4px; font-size: 16px; font-weight: 600; }
-  .score-info { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
+  .league-tag { font-size: 9px; color: var(--dim); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
   
+  .score-info { text-align: right; display: flex; flex-direction: column; align-items: flex-end; }
   .score { font-size: 20px; font-weight: bold; letter-spacing: 2px; }
   .status.live { color: var(--live); animation: blink 1.5s infinite; font-size: 12px; font-weight: bold; }
   .status.finished { color: var(--dim); font-size: 12px; }
@@ -77,7 +87,7 @@
   #match-detail.active { display: block; }
   #match-detail::-webkit-scrollbar { display: none; }
 
-  .detail-header { text-align: center; margin-bottom: 20px; font-size: 22px; font-weight: bold; }
+  .detail-header { text-align: center; margin-bottom: 20px; font-size: 20px; font-weight: bold; }
   .detail-score { color: var(--calcio); font-size: 28px; margin: 5px 0; }
   
   .timeline { display: flex; flex-direction: column; gap: 8px; }
@@ -92,9 +102,11 @@
 <body>
 
 <div id="header">
-  <button id="btn-home">⬅ HOME</button>
-  <div id="sport-title" style="color: var(--calcio);">CALCIO</div>
-  <div id="date-text"></div>
+  <div class="header-left">
+    <button id="btn-home">⬅ HOME</button>
+    <div id="sport-title" style="color: var(--calcio);">CALCIO</div>
+  </div>
+  <input type="date" id="date-picker">
 </div>
 
 <div id="main-view">
@@ -114,27 +126,32 @@
 
 <script>
 (() => {
-  // Imposta la data odierna
+  // Imposta la data di oggi nella tendina all'avvio
+  const datePicker = document.getElementById('date-picker');
   const today = new Date();
-  document.getElementById('date-text').textContent = today.toLocaleDateString('it-IT');
+  datePicker.value = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
 
-  // API PUBBLICHE IN TEMPO REALE (ESPN Servers)
+  // LISTE GLOBALI - Interroga le API per "tutto il mondo"
   const sportConfigs = {
     "CALCIO": {
       color: "var(--calcio)",
-      urls: [
-        "https://site.api.espn.com/apis/site/v2/sports/soccer/ita.1/scoreboard", // Serie A
-        "https://site.api.espn.com/apis/site/v2/sports/soccer/eng.1/scoreboard", // Premier League
-        "https://site.api.espn.com/apis/site/v2/sports/soccer/usa.1/scoreboard"  // MLS (Per garantire match in estate)
-      ]
+      leagues: [
+        "ita.1", "ita.2", "eng.1", "esp.1", "ger.1", "fra.1", 
+        "uefa.champions", "uefa.europa", "uefa.conference", "fifa.world",
+        "uefa.euro", "uefa.nations", "usa.1", "bra.1", "arg.1", "ksa.1", "ned.1", "por.1"
+      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/soccer/${l}/scoreboard`)
     },
     "BASKET": {
       color: "var(--basket)",
-      urls: ["https://site.api.espn.com/apis/site/v2/sports/basketball/nba/scoreboard"]
+      leagues: [
+        "nba", "wnba", "euroleague", "mens-college-basketball", "fiba.world"
+      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/basketball/${l}/scoreboard`)
     },
     "TENNIS": {
       color: "var(--tennis)",
-      urls: ["https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard"]
+      leagues: [
+        "atp", "wta"
+      ].map(l => `https://site.api.espn.com/apis/site/v2/sports/tennis/${l}/scoreboard`)
     }
   };
 
@@ -148,42 +165,63 @@
   const btnHome = document.getElementById('btn-home');
   const sportTitleEl = document.getElementById('sport-title');
 
-  // --- MOTORE DI SCARICAMENTO DATI ---
-  async function fetchRealData(sportName) {
+  // Ricarica dati quando cambi data dal calendario
+  datePicker.addEventListener('change', () => loadDataAndRender());
+
+  // --- MOTORE DI SCARICAMENTO PARALLELO (Super Veloce) ---
+  async function fetchRealData(sportName, dateStr) {
     const config = sportConfigs[sportName];
     let allMatches = [];
     
-    // Controlla tutti i campionati per quello sport
-    for (const url of config.urls) {
+    // Promesse multiple: scarichiamo i campionati di tutto il mondo simultaneamente!
+    const fetchPromises = config.leagues.map(async (baseUrl) => {
       try {
-        const response = await fetch(url);
+        const fetchUrl = `${baseUrl}?dates=${dateStr}`;
+        const response = await fetch(fetchUrl);
+        if (!response.ok) return [];
         const data = await response.json();
         
-        if(data.events) {
-          const matches = data.events.map(event => {
+        if (data.events) {
+          return data.events.map(event => {
             const comp = event.competitions[0];
-            const home = comp.competitors.find(c => c.homeAway === 'home');
-            const away = comp.competitors.find(c => c.homeAway === 'away');
+            const home = comp.competitors.find(c => c.homeAway === 'home') || comp.competitors[0];
+            const away = comp.competitors.find(c => c.homeAway === 'away') || comp.competitors[1];
             
+            const leagueName = data.leagues && data.leagues[0] ? (data.leagues[0].abbreviation || data.leagues[0].name) : '';
+
             return {
               id: event.id,
+              league: leagueName,
               home: home.team.shortDisplayName || home.team.name,
               away: away.team.shortDisplayName || away.team.name,
               scoreH: home.score || '0',
               scoreA: away.score || '0',
               status: event.status.type.shortDetail,
-              state: event.status.type.state, // 'in' (Live), 'pre' (Da iniziare), 'post' (Finita)
+              state: event.status.type.state, // 'in', 'pre', 'post'
               isLive: event.status.type.state === 'in',
               time: new Date(event.date).toLocaleTimeString('it-IT', {hour: '2-digit', minute:'2-digit'}),
-              summaryUrl: url.replace('/scoreboard', '/summary?event=' + event.id)
+              summaryUrl: baseUrl.replace('/scoreboard', '/summary?event=' + event.id)
             };
           });
-          allMatches = allMatches.concat(matches);
         }
+        return [];
       } catch (error) {
-        console.error("Errore download:", error);
+        return [];
       }
-    }
+    });
+
+    const results = await Promise.all(fetchPromises);
+    results.forEach(matches => { allMatches = allMatches.concat(matches); });
+
+    // Algoritmo: Ordina le partite portando le LIVE in cima
+    allMatches.sort((a, b) => {
+      if (a.isLive && !b.isLive) return -1;
+      if (!a.isLive && b.isLive) return 1;
+      if (a.state === 'pre' && b.state === 'post') return -1;
+      if (a.state === 'post' && b.state === 'pre') return 1;
+      return 0;
+    });
+
     return allMatches;
   }
 
@@ -196,18 +234,21 @@
     const sportName = sportsList[currentSportIndex];
     const config = sportConfigs[sportName];
     
+    // Converte la data dal picker (YYYY-MM-DD) nel formato server (YYYYMMDD)
+    const espnDate = datePicker.value.replace(/-/g, '');
+    
     sportTitleEl.textContent = sportName;
     sportTitleEl.style.color = config.color;
     document.getElementById('header').style.borderColor = config.color;
     
-    matchesListEl.innerHTML = '<div style="text-align:center; padding:30px;">Aggiornamento dati live...<br><span style="font-size:10px;color:gray;">Connessione ai server sportivi</span></div>';
+    matchesListEl.innerHTML = '<div style="text-align:center; padding:30px;">Aggiornamento dati mondiali...<br><span style="font-size:10px;color:gray;">Connessione ai server sportivi</span></div>';
     
-    currentMatches = await fetchRealData(sportName);
+    currentMatches = await fetchRealData(sportName, espnDate);
     
     matchesListEl.innerHTML = '';
     
     if (currentMatches.length === 0) {
-       matchesListEl.innerHTML = '<div style="text-align:center; padding:30px; color:gray;">Nessuna partita in programma oggi per questa categoria.</div>';
+       matchesListEl.innerHTML = '<div style="text-align:center; padding:30px; color:gray;">Nessuna partita rilevante per la data selezionata.</div>';
        return;
     }
     
@@ -221,13 +262,14 @@
 
       card.innerHTML = `
         <div class="team-info">
+          <span class="league-tag">${match.league}</span>
           <span>${match.home}</span>
           <span>${match.away}</span>
         </div>
         <div class="score-info">
           <span class="score">${match.scoreH} - ${match.scoreA}</span>
           <span class="${statusClass}">${match.status}</span>
-          <span class="start-time">${match.state === 'pre' ? 'Ore: ' + match.time : 'Iniziata: ' + match.time}</span>
+          <span class="start-time">${match.state === 'pre' ? 'Ore: ' + match.time : 'Inizio: ' + match.time}</span>
         </div>
       `;
       
@@ -235,7 +277,7 @@
     });
   }
 
-  // --- DETTAGLIO PARTITA CON EVENTI E MARCATORI VERI ---
+  // --- DETTAGLIO PARTITA (GOAL, ASSIST, CARTELLINI) ---
   async function openDetail(match) {
     inDetailView = true;
     matchesListEl.style.display = 'none';
@@ -245,7 +287,7 @@
     const config = sportConfigs[sportsList[currentSportIndex]];
     const color = config.color;
 
-    document.getElementById('det-teams').textContent = `${match.home} - ${match.away}`;
+    document.getElementById('det-teams').innerHTML = `<span style="font-size:12px; color:gray;">${match.league}</span><br>${match.home} - ${match.away}`;
     document.getElementById('det-score').textContent = `${match.scoreH} - ${match.scoreA}`;
     document.getElementById('det-score').style.color = color;
     
@@ -254,7 +296,7 @@
     statusEl.className = match.isLive ? 'status live' : 'status finished';
 
     const timelineEl = document.getElementById('det-timeline');
-    timelineEl.innerHTML = '<div style="text-align:center; padding: 30px;">Ricerca marcatori e dettagli...</div>';
+    timelineEl.innerHTML = '<div style="text-align:center; padding: 30px;">Scaricamento eventi...</div>';
 
     try {
       const res = await fetch(match.summaryUrl);
@@ -262,7 +304,6 @@
       
       timelineEl.innerHTML = ''; 
       
-      // keyEvents contiene gol, cartellini e rigori nelle API ESPN
       if (summaryData.keyEvents && summaryData.keyEvents.length > 0) {
         summaryData.keyEvents.forEach(ev => {
           let icon = '⏱️';
@@ -286,11 +327,11 @@
         timelineEl.innerHTML = '<div style="text-align:center; color:gray; font-size:12px; margin-top:20px;">Nessun evento o marcatore disponibile per questa partita.</div>';
       }
     } catch(e) {
-      timelineEl.innerHTML = '<div style="text-align:center; color:red; font-size:12px; margin-top:20px;">Errore di connessione al server degli eventi.</div>';
+      timelineEl.innerHTML = '<div style="text-align:center; color:red; font-size:12px; margin-top:20px;">Errore di connessione al server eventi.</div>';
     }
   }
 
-  // --- GESTIONE DELLE GESTURE (SWIPE E PINCH) ---
+  // --- GESTIONE DELLE GESTURE ---
   let touchStartX = 0;
   let touchStartY = 0;
 
@@ -300,23 +341,24 @@
   });
 
   document.addEventListener('pointerup', e => {
+    // Ignora le gesture se l'utente sta cliccando il calendario
+    if (e.target.id === 'date-picker') return;
+
     const touchEndX = e.clientX;
     const touchEndY = e.clientY;
     
     const diffX = touchEndX - touchStartX;
     const diffY = Math.abs(touchEndY - touchStartY);
 
-    // Rilevamento del PINCH (Click fermo senza scorrere il dito)
+    // Pinch (Click fermo senza scorrere)
     if (Math.abs(diffX) < 20 && diffY < 20) {
       const target = e.target;
       
-      // Pinch sul tasto Home
       if (target.closest('#btn-home') && inDetailView) {
         loadDataAndRender();
         return;
       }
       
-      // Pinch su una partita
       const card = target.closest('.match-card');
       if (card && !inDetailView) {
         const matchId = card.dataset.id;
@@ -326,7 +368,7 @@
       return;
     }
 
-    // Rilevamento dello SWIPE per cambiare Sport (Solo se non sei nei dettagli)
+    // Swipe laterale per cambiare sport (solo fuori dai dettagli)
     if (inDetailView) return;
 
     if (diffX > 60) {
@@ -338,7 +380,6 @@
     }
   });
 
-  // Tasti per simulazione su PC
   window.addEventListener('keydown', (e) => {
     if (inDetailView && e.key === 'Backspace') loadDataAndRender();
     if (!inDetailView) {
@@ -353,7 +394,7 @@
     }
   });
 
-  // Lancia l'applicazione all'avvio
+  // Avvia l'app caricando i dati di oggi
   loadDataAndRender();
 
 })();
