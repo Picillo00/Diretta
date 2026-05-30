@@ -351,6 +351,7 @@
     function showFormazioniPanel() {
         showingClassifica = false;
         detailSlider.classList.remove('show-classifica');
+        if (currentDetailMatch) openDetail(currentDetailMatch);
     }
 
     async function fetchRealData(sportName, dateStr) {
@@ -359,7 +360,7 @@
         const fetchPromises = config.leagues.map(async (leagueObj) => {
             try {
                 const { slug, url } = leagueObj;
-                const fetchUrl = `${url}?dates=${dateStr}`;
+                const fetchUrl = `${url}?dates=${dateStr}&_=${Date.now()}`;
                 const response = await fetch(fetchUrl);
                 if (!response.ok) return [];
                 const data = await response.json();
@@ -453,23 +454,16 @@
                     <div class="team-name"><img src="${match.awayLogo}" class="team-logo" onerror="this.style.display='none'"> ${match.away}</div>
                 </div>
                 <div class="score-info">
-                    <span class="score">${match.scoreH} - ${match.scoreA}</span>
+                    <span class="score">${match.scoreH} - ${match.scoreA}${match.penaltyH!=null ? ` <span style='font-size:11px;color:var(--text2);'>(${match.penaltyH}-${match.penaltyA} rig)</span>` : ''}</span>
                     <span class="status-badge ${statusClass}">${match.status}</span>
                     <span class="start-time">${match.state==='pre'?'🕐 ':'⏱️ '}${match.time}</span>
                 </div>`;
             matchesListEl.appendChild(card);
         });
-    }
-
-    async function fetchLineupsFromEvent(leagueSlug, eventId) {
-        try {
-            const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
-            const res = await fetch(url);
-            if (!res.ok) return null;
-            const data = await res.json();
-            return data;
-        } catch (e) {
-            return null;
+        // refresh automatico ogni 30s se ci sono live
+        if (window.liveTimer) clearInterval(window.liveTimer);
+        if (currentMatches.some(m=>m.isLive)) {
+            window.liveTimer = setInterval(()=>{ if(!inDetailView) loadDataAndRender(); }, 30000);
         }
     }
 
@@ -499,11 +493,11 @@
         const lineupsContainer = document.getElementById('lineups-grid-container');
         const timelineEl = document.getElementById('det-timeline');
         lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni...</div>';
-        timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento eventi...</div>';
-        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica disponibile con swipe ←</td></tr>';
+        timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento dati partita...</div>';
+        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica disponibile con swipe →</td></tr>';
 
         try {
-            const res = await fetch(match.summaryUrl);
+            const res = await fetch(match.summaryUrl + (match.summaryUrl.includes('?') ? '&' : '?') + '_=' + Date.now());
             const summaryData = await res.json();
 
             let seasonYear = new Date().getFullYear();
@@ -511,7 +505,7 @@
             else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
             currentDetailMatch.seasonYear = seasonYear;
 
-            // Rigori
+            // Penalty shootout
             let homePenalty = null, awayPenalty = null;
             const details = summaryData?.gamepackage?.competition?.details || [];
             const penDetail = details.find(d => d.type === 'penaltyShootout');
@@ -528,6 +522,9 @@
             if (homePenalty !== undefined && awayPenalty !== undefined && homePenalty !== null && awayPenalty !== null) {
                 penaltyEl.textContent = `(${homePenalty} - ${awayPenalty} d.c.r.)`;
                 penaltyEl.style.display = 'block';
+                match.penaltyH = homePenalty;
+                match.penaltyA = awayPenalty;
+                document.getElementById('det-score').textContent = match.scoreH + ' - ' + match.scoreA + ` (${homePenalty}-${awayPenalty} rig.)`;
             }
 
             const allKeyEvents = summaryData?.keyEvents || [];
@@ -551,13 +548,11 @@
                 playerEvents[pName].push({type, minute});
             });
 
-            // Funzione costruzione colonna formazione
-            const buildCol = (rosterEntries, teamName, logo) => {
+            // Funzione per costruire formazioni da roster
+            const buildFromRoster = (rosterEntries, teamName, logo) => {
                 const starters = rosterEntries.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
                 const subs = rosterEntries.filter(p=>!p.starter);
-                let html = `<div class="lineup-col">
-                    <div class="lineup-title"><img src="${logo}" onerror="this.style.display='none'"> ${teamName}</div>
-                    <ul class="lineup-list">`;
+                let html = `<div class="lineup-col"><div class="lineup-title"><img src="${logo}" onerror="this.style.display='none'"> ${teamName}</div><ul class="lineup-list">`;
                 starters.forEach(p=>{
                     const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
                     const nameLower = name.toLowerCase();
@@ -588,7 +583,6 @@
                 return html;
             };
 
-            // Estrazione roster con percorsi multipli
             let homeRoster, awayRoster, homeTeamName, awayTeamName, homeLogo, awayLogo;
             const competitors = summaryData?.gamepackage?.competition?.competitors;
             if (competitors && competitors.length===2) {
@@ -602,8 +596,8 @@
             if ((!homeRoster || homeRoster.length===0) && summaryData?.gamepackage?.rosters) {
                 const rostersByTeam = summaryData.gamepackage.rosters;
                 if (rostersByTeam.length>=2) {
-                    homeRoster = rostersByTeam[0].entries || rostersByTeam[0].roster?.entries;
-                    awayRoster = rostersByTeam[1].entries || rostersByTeam[1].roster?.entries;
+                    homeRoster = rostersByTeam[0].entries;
+                    awayRoster = rostersByTeam[1].entries;
                     homeTeamName = rostersByTeam[0].team?.shortDisplayName || 'Casa';
                     awayTeamName = rostersByTeam[1].team?.shortDisplayName || 'Trasferta';
                     homeLogo = rostersByTeam[0].team?.logo || '';
@@ -613,31 +607,37 @@
             if ((!homeRoster || homeRoster.length===0) && summaryData?.gamepackage?.lineups) {
                 const lineupsByTeam = summaryData.gamepackage.lineups;
                 if (lineupsByTeam.length>=2) {
-                    homeRoster = lineupsByTeam[0].roster?.entries || lineupsByTeam[0].entries;
-                    awayRoster = lineupsByTeam[1].roster?.entries || lineupsByTeam[1].entries;
+                    homeRoster = lineupsByTeam[0].entries;
+                    awayRoster = lineupsByTeam[1].entries;
                     homeTeamName = lineupsByTeam[0].team?.shortDisplayName || 'Casa';
                     awayTeamName = lineupsByTeam[1].team?.shortDisplayName || 'Trasferta';
                 }
             }
+            // Se ancora vuoto, proviamo endpoint lineups dedicato
             if ((!homeRoster || homeRoster.length===0)) {
-                const lineupsData = await fetchLineupsFromEvent(match.leagueSlug, match.id);
-                if (lineupsData) {
-                    const teams = lineupsData.teams || lineupsData.entries || [];
-                    if (teams.length>=2) {
-                        homeRoster = teams[0].entries;
-                        awayRoster = teams[1].entries;
-                        homeTeamName = teams[0].team?.shortDisplayName || homeTeamName || 'Casa';
-                        awayTeamName = teams[1].team?.shortDisplayName || awayTeamName || 'Trasferta';
-                        homeLogo = teams[0].team?.logo || homeLogo || '';
-                        awayLogo = teams[1].team?.logo || awayLogo || '';
+                try {
+                    const lineupsUrl = `https://site.api.espn.com/apis/site/v2/sports/soccer/${match.leagueSlug}/lineups?event=${match.id}&_=${Date.now()}`;
+                    const lineupsRes = await fetch(lineupsUrl);
+                    if (lineupsRes.ok) {
+                        const lineupsData = await lineupsRes.json();
+                        const teams = lineupsData?.teams || lineupsData?.entries;
+                        if (teams && teams.length>=2) {
+                            homeRoster = teams[0].entries;
+                            awayRoster = teams[1].entries;
+                            homeTeamName = teams[0].team?.shortDisplayName || homeTeamName || 'Casa';
+                            awayTeamName = teams[1].team?.shortDisplayName || awayTeamName || 'Trasferta';
+                            homeLogo = teams[0].team?.logo || homeLogo || '';
+                            awayLogo = teams[1].team?.logo || awayLogo || '';
+                        }
                     }
-                }
+                } catch (e) {}
             }
 
             if (homeRoster && homeRoster.length>0 && awayRoster && awayRoster.length>0) {
-                lineupsContainer.innerHTML = buildCol(homeRoster, homeTeamName, homeLogo) + buildCol(awayRoster, awayTeamName, awayLogo);
+                lineupsContainer.innerHTML = buildFromRoster(homeRoster, homeTeamName, homeLogo) + buildFromRoster(awayRoster, awayTeamName, awayLogo);
             } else {
-                lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
+                lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili al momento.<br><span style="font-size:11px;color:var(--text3)">Riprovo automaticamente...</span></div>';
+                if (match.isLive) { setTimeout(()=>{ if(inDetailView && currentDetailMatch?.id===match.id) openDetail(match); }, 30000); }
             }
 
             const filteredEvents = allKeyEvents.filter(ev=>{
@@ -645,6 +645,10 @@
                 return importantTypes.some(k=>t.includes(k));
             });
             timelineEl.innerHTML = '';
+            if (match.isLive && inDetailView) {
+                if (window.detailTimer) clearTimeout(window.detailTimer);
+                window.detailTimer = setTimeout(()=>{ if(inDetailView) openDetail(match); }, 30000);
+            }
             if (filteredEvents.length>0) {
                 filteredEvents.forEach(ev=>{
                     let icon='⏱️'; const t=(ev.type?.text||'').toLowerCase();
@@ -677,7 +681,8 @@
         classificaTitleEl.innerHTML = '📊 '+(leagueName||leagueSlug);
         classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Caricamento classifica...</td></tr>';
         const trySeason = async (season) => {
-            const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
+            const base = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
+            const url = base + (base.includes('?') ? '&' : '?') + '_=' + Date.now();
             const res = await fetch(url);
             if (!res.ok) return null;
             return await res.json();
