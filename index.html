@@ -351,9 +351,7 @@
     function showFormazioniPanel() {
         showingClassifica = false;
         detailSlider.classList.remove('show-classifica');
-        // ricarica formazioni in tempo reale quando torni al pannello
         if (currentDetailMatch) {
-            // riapri detail per aggiornare
             openDetail(currentDetailMatch);
         }
     }
@@ -364,8 +362,7 @@
         const fetchPromises = config.leagues.map(async (leagueObj) => {
             try {
                 const { slug, url } = leagueObj;
-                const bustUrl = url + (url.includes('?') ? '&' : '?') + 'dates=' + espnDate + '&_=' + Date.now();
-                const fetchUrl = `${url}?dates=${dateStr}`;
+                const fetchUrl = `${url}?dates=${dateStr}&_=${Date.now()}`;
                 const response = await fetch(fetchUrl);
                 if (!response.ok) return [];
                 const data = await response.json();
@@ -465,6 +462,11 @@
                 </div>`;
             matchesListEl.appendChild(card);
         });
+        // Auto-refresh ogni 30s se ci sono partite LIVE
+        if (window.liveRefreshTimer) clearInterval(window.liveRefreshTimer);
+        if (currentMatches.some(m=>m.isLive)) {
+            window.liveRefreshTimer = setInterval(()=>{ if(!inDetailView) loadDataAndRender(); }, 30000);
+        }
     }
 
     async function openDetail(match) {
@@ -524,7 +526,6 @@
                 penaltyEl.style.display = 'block';
                 match.penaltyH = homePenalty;
                 match.penaltyA = awayPenalty;
-                // aggiorna anche score nel titolo
                 document.getElementById('det-score').textContent = match.scoreH+' - '+match.scoreA + ` (${homePenalty}-${awayPenalty} rig.)`;
             }
 
@@ -638,7 +639,6 @@
                 lineupsContainer.innerHTML = buildFromRoster(homeRoster, homeTeamName, homeLogo) + buildFromRoster(awayRoster, awayTeamName, awayLogo);
             } else {
                 lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili al momento.<br><span style="font-size:11px;color:var(--text3)">Verranno caricate automaticamente quando disponibili (aggiornamento live).</span></div>';
-                // se live, riprova tra 30s
                 if (match.isLive) {
                     setTimeout(()=>{ if(inDetailView && currentDetailMatch?.id===match.id) openDetail(match); }, 30000);
                 }
@@ -649,7 +649,12 @@
                 return importantTypes.some(k=>t.includes(k));
             });
             timelineEl.innerHTML = '';
-            if (filteredEvents.length>0) {
+            // se partita live, aggiorna dettaglio ogni 30s
+            if (match.isLive && inDetailView) {
+                if (window.detailRefreshTimer) clearTimeout(window.detailRefreshTimer);
+                window.detailRefreshTimer = setTimeout(()=>{ if(inDetailView) openDetail(match); }, 30000);
+            }
+            if (filteredEvents.length>0 {
                 filteredEvents.forEach(ev=>{
                     let icon='⏱️'; const t=(ev.type?.text||'').toLowerCase();
                     if (t.includes('goal') && !t.includes('own')) icon='⚽';
@@ -683,7 +688,7 @@
         const trySeason = async (season) => {
             const base = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/standings${season ? '?season='+season : ''}`;
             const url = base + (base.includes('?') ? '&' : '?') + '_=' + Date.now();
-            const res = await fetch(bustUrl);
+            const res = await fetch(url);
             if (!res.ok) return null;
             return await res.json();
         };
@@ -747,6 +752,3 @@
 
     loadDataAndRender();
 })();
-</script>
-</body>
-</html>
