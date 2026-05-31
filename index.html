@@ -666,12 +666,12 @@ const espnDate = datePicker.value.replace(/-/g,'');
 // Forza il colore del bottone HOME basato sullo sport per coerenza
 btnHome.style.color = config.color;
 
-matchesListEl.innerHTML = '<div class="loading-text">📡 Aggiornamento dati mondiali...</div>';
+matchesListEl.innerHTML = '<div class="loading-text">📡 Aggiornamento dati...</div>';
 
 currentMatches = await fetchRealData(sportName, espnDate);
 let bannerHTML = '';
 if (currentMatches.length === 0) {
-const prev = await searchPreviousDays(sportName, espnDate, 7);
+const prev = await searchPreviousDays(sportName, espnDate, 20);
 if (prev) {
 currentMatches = prev.matches;
 bannerHTML = `<div class="section-banner">📅 Nessuna partita per la data selezionata.<br><span>Ultime partite – ${prev.dateFormatted}</span></div>`;
