@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,user-scalable=no">
     <meta name="theme-color" content="#0a0f1a">
-    <title>LiveScore Pro – Neural Band Ready</title>
+    <title>Diretta Picillo</title>
     <style>
         :root {
             --bg: #0a0f1a;
@@ -290,6 +290,14 @@
             z-index: 30; letter-spacing: 0.3px;
         }
         .loading-text { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; font-weight: 500; }
+        .lineups-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
+        .lineup-col { background: var(--surface); border-radius: 10px; padding: 10px; }
+        .lineup-title { font-weight: 800; font-size: 11px; text-align: center; margin-bottom: 8px; border-bottom: 1px solid var(--border); padding-bottom: 5px; display: flex; align-items: center; justify-content: center; gap: 5px; }
+        .lineup-list { list-style: none; padding: 0; font-size: 11px; }
+        .lineup-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #1e293b; }
+        .player-name { font-weight: 500; }
+        .player-badges { display: flex; gap: 3px; }
+        .badge { padding: 1px 4px; border-radius: 4px; font-size: 9px; font-weight: 700; color: #fff; }
     </style>
 </head>
 <body>
@@ -653,175 +661,90 @@
     });
 
     async function fetchLineups(leagueSlug, eventId) {
-        try {
-            const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
-            const res = await fetch(url);
-            if (!res.ok) return null;
-            const data = await res.json();
-            const teams = data.teams || data.entries || [];
-            if (teams.length >= 2) {
-                return teams.map(t => ({
-                    name: t.team?.shortDisplayName || t.team?.name || '???',
-                    logo: t.team?.logo || t.team?.logos?.[0]?.href || '',
-                    entries: t.entries || t.roster?.entries || []
-                }));
-            }
-            return null;
-        } catch (e) { return null; }
-    }
-
-    async function openDetail(match) {
-        currentDetailMatch = match;
-        inDetailView = true;
-        currentPanel = 'formazioni';
-        detailSlider.classList.remove('show-classifica','show-partite');
-        matchesListEl.style.display = 'none';
-        matchDetailEl.classList.add('active');
-        btnHome.classList.add('active');
-
-        const config = sportConfigs[sportsList[currentSportIndex]];
-        const color = config.color;
-
-        document.getElementById('det-league').textContent = '🏆 '+match.league;
-        document.getElementById('det-teams').innerHTML = `<span><img src="${match.homeLogo}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;" onerror="this.style.display='none'"> ${match.home} - ${match.away} <img src="${match.awayLogo}" style="width:24px;height:24px;vertical-align:middle;border-radius:4px;" onerror="this.style.display='none'"></span>`;
-        document.getElementById('det-score').textContent = match.scoreH+' - '+match.scoreA;
-        document.getElementById('det-score').style.color = color;
-        const penaltyEl = document.getElementById('det-penalty');
-        penaltyEl.style.display = 'none';
-        const statusEl = document.getElementById('det-status');
-        statusEl.textContent = match.status;
-        statusEl.style.color = match.isLive?'#fff':'var(--text3)';
-        statusEl.style.background = match.isLive?'var(--live-red)':'var(--surface2)';
-
-        const lineupsContainer = document.getElementById('lineups-grid-container');
-        const timelineEl = document.getElementById('det-timeline');
-        lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni...</div>';
-        timelineEl.innerHTML = '<div class="loading-text">📡 Scaricamento eventi...</div>';
-        classificaTable.innerHTML = '<tr><td colspan="8" style="padding:30px;text-align:center;color:var(--text3);">Classifica con swipe ←</td></tr>';
-        partiteList.innerHTML = '<div class="loading-text">Partite recenti con swipe →→</div>';
-
-        try {
-            const res = await fetch(match.summaryUrl);
-            const summaryData = await res.json();
-
-            let seasonYear = new Date().getFullYear();
-            if (summaryData?.header?.season?.year) seasonYear = summaryData.header.season.year;
-            else if (summaryData?.gamepackage?.season?.year) seasonYear = summaryData.gamepackage.season.year;
-            currentDetailMatch.seasonYear = seasonYear;
-
-            let homePenalty = null, awayPenalty = null;
-            const competitors = summaryData?.gamepackage?.competition?.competitors;
-            if (competitors && competitors.length===2) {
-                homePenalty = competitors[0].penaltyShootout?.score;
-                awayPenalty = competitors[1].penaltyShootout?.score;
-            }
-            if ((homePenalty === undefined || homePenalty === null) && summaryData?.gamepackage?.competition?.details) {
-                const details = summaryData.gamepackage.competition.details;
-                const penDetail = details.find(d => d.type === 'penaltyShootout');
-                if (penDetail && penDetail.competitors) {
-                    homePenalty = penDetail.competitors[0]?.score;
-                    awayPenalty = penDetail.competitors[1]?.score;
-                }
-            }
-            if (homePenalty !== undefined && awayPenalty !== undefined && homePenalty !== null && awayPenalty !== null) {
-                penaltyEl.textContent = `(${homePenalty} - ${awayPenalty} d.c.r.)`;
-                penaltyEl.style.display = 'block';
-            }
-
-            const allKeyEvents = summaryData?.keyEvents || [];
-            const playerEvents = {};
-            const importantTypes = ['goal','yellow','red','penalty','injury','assist','var','own goal','missed penalty'];
-            allKeyEvents.forEach(ev => {
-                const t = (ev.type?.text||'').toLowerCase();
-                if (!importantTypes.some(k=>t.includes(k))) return;
-                const pName = extractPlayerName(ev.text||ev.shortText||'');
-                if (!pName) return;
-                const minute = ev.clock?.displayValue || '';
-                let type = 'other';
-                if (t.includes('goal') && !t.includes('own')) type='goal';
-                else if (t.includes('own goal')) type='goal';
-                else if (t.includes('yellow')) type='yellow';
-                else if (t.includes('red')) type='red';
-                else if (t.includes('penalty')) type='penalty';
-                else if (t.includes('injury')) type='injury';
-                else if (t.includes('assist')) type='assist';
-                if (!playerEvents[pName]) playerEvents[pName] = [];
-                playerEvents[pName].push({type, minute});
-            });
-
-            const buildCol = (rosterEntries, teamName, logo) => {
-                const starters = rosterEntries.filter(p=>p.starter).sort((a,b)=>(a.order||0)-(b.order||0));
-                const subs = rosterEntries.filter(p=>!p.starter);
-                let html = `<div class="lineup-col">
-                    <div class="lineup-title"><img src="${logo}" onerror="this.style.display='none'"> ${teamName}</div>
-                    <ul class="lineup-list">`;
-                starters.forEach(p=>{
-                    const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
-                    const nameLower = name.toLowerCase();
-                    const pos = p.position?.abbreviation ? (positionIT[p.position.abbreviation]||p.position.abbreviation) : '';
-                    let badges = '';
-                    (playerEvents[nameLower]||[]).forEach(ev=>{
-                        let cls = ev.type==='goal'?'goal':(ev.type==='yellow'?'yellow':(ev.type==='red'?'red':''));
-                        badges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
-                    });
-                    html += `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${badges}<span class="pos-tag">${pos}</span></span></li>`;
-                });
-                html += `</ul>`;
-                if (subs.length>0) {
-                    html += `<div class="subs-label-lineup">🪑 Panchina</div><ul class="lineup-list">`;
-                    subs.forEach(p=>{
-                        const name = p.athlete?.shortName || p.athlete?.displayName || 'N/A';
-                        const nameLower = name.toLowerCase();
-                        let badges = '';
-                        (playerEvents[nameLower]||[]).forEach(ev=>{
-                            let cls = ev.type==='goal'?'goal':(ev.type==='yellow'?'yellow':(ev.type==='red'?'red':''));
-                            badges += `<span class="event-badge ${cls}">${ev.type==='goal'?'⚽':ev.type==='yellow'?'🟨':ev.type==='red'?'🟥':''} ${ev.minute}</span>`;
-                        });
-                        html += `<li><span class="plyr-name">${name}</span><span class="plyr-badges">${badges}</span></li>`;
-                    });
-                    html += `</ul>`;
-                }
-                html += `</div>`;
-                return html;
-            };
-
-            let homeRoster, awayRoster, homeTeamName, awayTeamName, homeLogo, awayLogo;
-            if (competitors && competitors.length===2) {
-                homeRoster = competitors[0].roster?.entries;
-                awayRoster = competitors[1].roster?.entries;
-                homeTeamName = competitors[0].team?.shortDisplayName || competitors[0].team?.name || 'Casa';
-                awayTeamName = competitors[1].team?.shortDisplayName || competitors[1].team?.name || 'Trasferta';
-                homeLogo = competitors[0].team?.logo || competitors[0].team?.logos?.[0]?.href || '';
-                awayLogo = competitors[1].team?.logo || competitors[1].team?.logos?.[0]?.href || '';
-            }
-            if ((!homeRoster || homeRoster.length===0) && summaryData?.gamepackage?.rosters) {
-                const rostersByTeam = summaryData.gamepackage.rosters;
-                if (rostersByTeam.length>=2) {
-                    homeRoster = rostersByTeam[0].entries || (rostersByTeam[0].roster ? rostersByTeam[0].roster.entries : null);
-                    awayRoster = rostersByTeam[1].entries || (rostersByTeam[1].roster ? rostersByTeam[1].roster.entries : null);
-                    homeTeamName = rostersByTeam[0].team?.shortDisplayName || 'Casa';
-                    awayTeamName = rostersByTeam[1].team?.shortDisplayName || 'Trasferta';
-                    homeLogo = rostersByTeam[0].team?.logo || '';
-                    awayLogo = rostersByTeam[1].team?.logo || '';
-                }
-            }
-            if ((!homeRoster || homeRoster.length===0)) {
-                const lineupsData = await fetchLineups(match.leagueSlug, match.id);
-                if (lineupsData) {
-                    homeRoster = lineupsData[0].entries;
-                    awayRoster = lineupsData[1].entries;
-                    homeTeamName = lineupsData[0].name;
-                    awayTeamName = lineupsData[1].name;
-                    homeLogo = lineupsData[0].logo;
-                    awayLogo = lineupsData[1].logo;
-                }
-            }
-
-            if (homeRoster && homeRoster.length>0 && awayRoster && awayRoster.length>0) {
-                lineupsContainer.innerHTML = buildCol(homeRoster, homeTeamName, homeLogo) + buildCol(awayRoster, awayTeamName, awayLogo);
-            } else {
-                lineupsContainer.innerHTML = '<div class="loading-text">Formazioni non disponibili per questa partita.</div>';
-            }
+				try {
+					const url = `https://site.api.espn.com/apis/site/v2/sports/soccer/${leagueSlug}/events/${eventId}/lineups`;
+					const res = await fetch(url);
+					if (!res.ok) return null;
+					const data = await res.json();
+					const teams = data.teams || data.entries || [];
+					if (teams.length >= 2) {
+						return teams.map(t => ({
+							name: t.team?.shortDisplayName || t.team?.name || '???',
+							logo: t.team?.logo || t.team?.logos?.[0]?.href || '',
+							entries: t.entries || t.roster?.entries || []
+						}));
+					}
+					return null;
+				} catch (e) { return null; }
+			}
+		
+			async function openDetail(match) {
+			currentDetailMatch = match;
+			inDetailView = true;
+			currentPanel = 'formazioni';
+			detailSlider.classList.remove('show-classifica','show-partite');
+			matchesListEl.style.display = 'none';
+			matchDetailEl.classList.add('active');
+			btnHome.classList.add('active');
+		
+			// UI Reset
+			document.getElementById('det-league').textContent = '🏆 '+match.league;
+			document.getElementById('det-teams').innerHTML = `<span>${match.home} vs ${match.away}</span>`;
+			document.getElementById('det-score').textContent = match.scoreH+' - '+match.scoreA;
+		
+			const lineupsContainer = document.getElementById('lineups-grid-container');
+			const timelineEl = document.getElementById('det-timeline');
+			lineupsContainer.innerHTML = '<div class="loading-text">Caricamento formazioni dettagliate...</div>';
+		
+			try {
+				const res = await fetch(match.summaryUrl);
+				const data = await res.json();
+				
+				// 1. MAPPATURA EVENTI PER GIOCATORE
+				const playerMap = {}; // name -> [{type, minute}]
+				(data.keyEvents || []).forEach(ev => {
+					const name = (ev.text || '').split(' ').slice(0,2).join(' ').toLowerCase();
+					if(!playerMap[name]) playerMap[name] = [];
+					let type = 'other';
+					const txt = (ev.text || '').toLowerCase();
+					if(txt.includes('goal')) type = 'goal';
+					else if(txt.includes('yellow')) type = 'yellow';
+					else if(txt.includes('red')) type = 'red';
+					else if(txt.includes('injury')) type = 'injury';
+					else if(txt.includes('sub')) type = 'sub';
+					
+					playerMap[name].push({ type, minute: ev.clock?.displayValue || '' });
+				});
+		
+				// 2. RENDERING FORMAZIONI
+				lineupsContainer.innerHTML = '';
+				const competitors = data.gamepackage?.competition?.competitors || [];
+				
+				competitors.forEach(team => {
+					let html = `<div class="lineup-col"><div class="lineup-title">${team.team.displayName}</div><ul class="lineup-list">`;
+					(team.roster?.entries || []).forEach(p => {
+						const pName = (p.athlete.shortName || p.athlete.displayName).toLowerCase();
+						const events = playerMap[pName] || [];
+						
+						html += `
+						<li class="lineup-item">
+							<span class="player-name">${p.athlete.shortName}</span>
+							<div class="player-badges">
+								${events.map(e => `
+									<span class="badge" style="background:${e.type==='goal'?'#22c55e':e.type==='yellow'?'#eab308':e.type==='red'?'#ef4444':'#64748b'}">
+										${e.type==='goal'?'⚽':e.type==='yellow'?'🟨':e.type==='red'?'🟥':e.type==='injury'?'🩹':'🔄'} ${e.minute}
+									</span>
+								`).join('')}
+							</div>
+						</li>`;
+					});
+					html += '</ul></div>';
+					lineupsContainer.innerHTML += html;
+				});
+		
+			} catch(e) {
+				lineupsContainer.innerHTML = "Formazioni non disponibili.";
+			}
 
             const filteredEvents = allKeyEvents.filter(ev=>{
                 const t=(ev.type?.text||'').toLowerCase();
@@ -978,6 +901,8 @@
     });
 
     loadDataAndRender();
+    loadClassificaOrBracket(match.leagueSlug, match.league, new Date().getFullYear());
+    loadRecentMatches(match.leagueSlug, new Date().getFullYear());
 })();
 </script>
 </body>
