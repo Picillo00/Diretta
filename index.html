@@ -410,13 +410,8 @@ color: "var(--accent-tennis)",
 leagues: [{ slug: "atp", url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard" }]
 },
 "VOLLEY": {
-    color: "var(--accent-volley)",
-    leagues: [
-        { 
-            slug: "volleyball.womens.nations.league", 
-            url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens.nations.league/scoreboard" 
-        }
-    ]
+color: "var(--accent-volley)",
+leagues: [{ slug: "volleyball.women.international", url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/women-international/scoreboard" }]
 }
 };
 
@@ -541,8 +536,6 @@ if (!response.ok) return [];
 const data = await response.json();
 if (data.events) {
 return data.events.map(event => {
-const home = comp.competitors[0];
-const away = comp.competitors[1];
 const comp = event.competitions[0];
 const home = comp.competitors.find(c=>c.homeAway==='home') || comp.competitors[0];
 const away = comp.competitors.find(c=>c.homeAway==='away') || comp.competitors[1];
