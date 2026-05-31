@@ -415,10 +415,6 @@ leagues: [{ slug: "atp", url: "https://site.api.espn.com/apis/site/v2/sports/ten
         { 
             slug: "volleyball.womens.nations.league", 
             url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens.nations.league/scoreboard" 
-        },
-        { 
-            slug: "volleyball.womens.world.championship", 
-            url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens.world.championship/scoreboard" 
         }
     ]
 }
@@ -545,6 +541,10 @@ if (!response.ok) return [];
 const data = await response.json();
 if (data.events) {
 return data.events.map(event => {
+const comp = event.competitions?.[0];
+if (!comp || !comp.competitors || comp.competitors.length < 2) continue; // salta se non ci sono abbastanza giocatori
+const home = comp.competitors[0];
+const away = comp.competitors[1];
 const comp = event.competitions[0];
 const home = comp.competitors.find(c=>c.homeAway==='home') || comp.competitors[0];
 const away = comp.competitors.find(c=>c.homeAway==='away') || comp.competitors[1];
