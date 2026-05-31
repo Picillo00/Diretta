@@ -171,7 +171,7 @@ border-radius: var(--radius); padding: 14px 12px; box-shadow: var(--shadow);
 }
 .detail-header .league-row { display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: wrap; }
 .detail-header .league-name { font-size: 11px; color: var(--text3); text-transform: uppercase; letter-spacing: 0.8px; font-weight: 600; }
-.swipe-hint-detail { font-size: 9px; color: var(--text3); background: var(--surface2); padding: 3px 10px; border-radius: 12px; letter-spacing: 0.5px; font-weight: 600; margin-left: 8px; }
+.swipe-hint-detail { display: none !important; }
 .detail-teams { font-size: 18px; font-weight: 800; margin-top: 6px; letter-spacing: 0.3px; }
 .detail-score { font-size: 36px; font-weight: 900; margin: 6px 0; letter-spacing: 2px; font-variant-numeric: tabular-nums; font-family: 'Inter','SF Mono',monospace; }
 .penalty-score { font-size: 14px; font-weight: 600; color: var(--text2); margin-top: 2px; }
@@ -256,6 +256,35 @@ color: var(--text3); background: var(--surface); padding: 5px; border-top: 1px s
 z-index: 30; letter-spacing: 0.3px;
 }
 .loading-text { text-align: center; padding: 40px 20px; color: var(--text3); font-size: 13px; font-weight: 500; }
+
+/* --- NUOVI TAB PER I DETTAGLI --- */
+#detail-tabs {
+  display: flex;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+.tab-btn {
+  flex: 1;
+  padding: 12px 0;
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  color: var(--text2);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.tab-btn.active {
+  color: #fff;
+  border-bottom-color: var(--accent-calcio);
+}
+.tab-btn:active {
+  background: rgba(255,255,255,0.05);
+}
 </style>
 </head>
 <body>
@@ -273,12 +302,17 @@ z-index: 30; letter-spacing: 0.3px;
 <div id="matches-list"></div>
 
 <div id="match-detail">
+<div id="detail-tabs">
+<button class="tab-btn active" data-target="formazioni">Formazioni</button>
+<button class="tab-btn" data-target="classifica">Classifica</button>
+<button class="tab-btn" data-target="partite">Partite</button>
+</div>
+
 <div id="detail-slider">
 <div id="panel-formazioni" class="detail-panel">
 <div class="detail-header">
 <div class="league-row">
 <span class="league-name" id="det-league"></span>
-<span class="swipe-hint-detail">Classifica Swipe ➔</span>
 </div>
 <div class="detail-teams" id="det-teams">Squadra A - Squadra B</div>
 <div class="detail-score" id="det-score">0 - 0</div>
@@ -294,7 +328,6 @@ z-index: 30; letter-spacing: 0.3px;
 <div id="panel-classifica" class="detail-panel">
 <div class="classifica-header">
 <span class="classifica-title" id="classifica-title">📊 Classifica Campionato</span>
-<span class="swipe-hint-detail">⬅ Eventi | Partite ➔</span>
 </div>
 <div id="classifica-table-wrap">
 <table id="classifica-table"></table>
@@ -304,7 +337,6 @@ z-index: 30; letter-spacing: 0.3px;
 <div id="panel-partite" class="detail-panel">
 <div class="partite-header">
 <span class="partite-title" id="partite-title">📅 Partite Precedenti</span>
-<span class="swipe-hint-detail">⬅ Classifica Tab</span>
 </div>
 <div id="partite-list"></div>
 </div>
@@ -312,7 +344,7 @@ z-index: 30; letter-spacing: 0.3px;
 </div>
 </div>
 
-<div id="footer"><b>Swipe Orizzontale</b> nei Dettagli &nbsp;|&nbsp; <b>Tocca Card</b> per info &nbsp;|&nbsp; <b>⬅ Home</b> per uscire</div>
+<div id="footer"><b>Usa i bottoni</b> nei Dettagli &nbsp;|&nbsp; <b>Tocca Card</b> per info &nbsp;|&nbsp; <b>⬅ Home</b> per uscire</div>
 
 <script>
 (() => {
@@ -378,6 +410,16 @@ const partiteList = document.getElementById('partite-list');
 const partiteTitle = document.getElementById('partite-title');
 const positionIT = { "GK":"POR", "DF":"DIF", "MF":"CEN", "FW":"ATT" };
 
+// --- NUOVA LOGICA DEI BOTTONI ---
+const tabButtons = document.querySelectorAll('.tab-btn');
+
+tabButtons.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const target = e.target.getAttribute('data-target');
+    goToPanel(target);
+  });
+});
+
 function translateEventText(text) {
 if (!text) return '';
 return text.replace(/\bGoal\b/gi,'Gol').replace(/\bYellow card\b/gi,'Cartellino giallo')
@@ -390,34 +432,30 @@ return text.replace(/\bGoal\b/gi,'Gol').replace(/\bYellow card\b/gi,'Cartellino 
 datePicker.addEventListener('change', ()=>loadDataAndRender());
 btnHome.addEventListener('click', ()=>loadDataAndRender());
 
-let detailStartX = 0;
-matchDetailEl.addEventListener('pointerdown', e => { detailStartX = e.clientX; });
-matchDetailEl.addEventListener('pointerup', e => {
-if (!inDetailView) return;
-const diff = e.clientX - detailStartX;
-if (Math.abs(diff) > 40) {
-if (diff < -30) {
-if (currentPanel === 'formazioni') goToPanel('classifica');
-else if (currentPanel === 'classifica') goToPanel('partite');
-} else if (diff > 30) {
-if (currentPanel === 'classifica') goToPanel('formazioni');
-else if (currentPanel === 'partite') goToPanel('classifica');
-}
-}
-});
-
 function goToPanel(panel) {
-currentPanel = panel;
-if (panel === 'formazioni') {
-detailSlider.classList.remove('show-classifica','show-partite');
-} else if (panel === 'classifica') {
-detailSlider.classList.add('show-classifica');
-detailSlider.classList.remove('show-partite');
-if (currentDetailMatch) loadClassificaOrBracket(currentDetailMatch.leagueSlug, currentDetailMatch.league);
-} else if (panel === 'partite') {
-detailSlider.classList.add('show-partite');
-if (currentDetailMatch) loadRecentMatches(currentDetailMatch.leagueSlug);
-}
+  currentPanel = panel;
+  
+  // Aggiorna lo stato visivo dei bottoni
+  tabButtons.forEach(btn => {
+    if (btn.getAttribute('data-target') === panel) {
+      btn.classList.add('active');
+      btn.style.borderBottomColor = sportConfigs[sportsList[currentSportIndex]].color;
+    } else {
+      btn.classList.remove('active');
+      btn.style.borderBottomColor = 'transparent';
+    }
+  });
+
+  if (panel === 'formazioni') {
+    detailSlider.classList.remove('show-classifica','show-partite');
+  } else if (panel === 'classifica') {
+    detailSlider.classList.add('show-classifica');
+    detailSlider.classList.remove('show-partite');
+    if (currentDetailMatch) loadClassificaOrBracket(currentDetailMatch.leagueSlug, currentDetailMatch.league);
+  } else if (panel === 'partite') {
+    detailSlider.classList.add('show-partite');
+    if (currentDetailMatch) loadRecentMatches(currentDetailMatch.leagueSlug);
+  }
 }
 
 async function fetchRealData(sportName, dateStr) {
@@ -656,7 +694,6 @@ for(let i=0; i<gH; i++) evList.push({ min: Math.floor(Math.random()*80)+5, icon:
 for(let i=0; i<gA; i++) evList.push({ min: Math.floor(Math.random()*80)+5, icon:'⚽', text:`Gol di ${match.away}! Tiro chirurgico all'angolino.` });
 
 evList.push({ min: Math.floor(Math.random()*40)+10, icon:'🟨', text:'Cartellino giallo per duro intervento difensivo.' });
-evList.push({ min: Math.floor(Math.random()*30)+55, icon:'🔄', text:'Sostituzione: forze fresche a centrocampo.' });
 
 evList.sort((a,b)=>a.min - b.min);
 evList.forEach(e => {
@@ -814,11 +851,13 @@ keyEvents.forEach(ev => {
 let time = ev.clock?.displayValue || ev.time || '';
 let text = translateEventText(ev.text || '');
 let type = ev.type?.text?.toLowerCase() || '';
+
+if (type.includes('sub') || type.includes('sostituzione') || type.includes('substitution')) return;
+
 let icon = '📢';
 if (type.includes('goal') || type.includes('gol')) icon = '⚽';
 else if (type.includes('yellow')) icon = '🟨';
 else if (type.includes('red')) icon = '🟥';
-else if (type.includes('sub')) icon = '🔄';
 else if (type.includes('injury')) icon = '🚑';
 
 eventsHTML += `<div class="event"><span class="ev-icon">${icon}</span><span class="ev-time">${time}</span><span class="ev-text">${text}</span></div>`;
@@ -838,11 +877,6 @@ lineupsContainer.innerHTML = generateMockLineups(match);
 goToPanel('formazioni');
 }
 }
-
-// Gestione Swipe e Tastiera nel corpo principale
-document.addEventListener('pointerup', e => {
-if (e.target.closest('#date-picker') || e.target.closest('#match-detail')) return;
-});
 
 window.addEventListener('keydown', (e) => {
 if (e.key==='Backspace' && inDetailView) { e.preventDefault(); loadDataAndRender(); }
