@@ -16,6 +16,7 @@
 --accent-calcio: #22c55e;
 --accent-basket: #f97316;
 --accent-tennis: #eab308;
+--accent-volley: #ec4899; /* Colore per Volley Femminile */
 --live-red: #ef4444;
 --card-yellow: #eab308;
 --card-red: #ef4444;
@@ -46,9 +47,20 @@ cursor: pointer; letter-spacing: 0.3px; white-space: nowrap; transition: 0.2s;
 }
 #btn-home.active { display: block; }
 #btn-home:active { background: #334155; transform: scale(0.96); }
-#sport-title {
-font-size: 16px; font-weight: 800; text-transform: uppercase; letter-spacing: 1.5px; white-space: nowrap;
+
+/* --- NUOVO SELETTORE SPORT A ICONE --- */
+#sport-selector {
+display: flex; gap: 4px; background: var(--surface2); padding: 4px; border-radius: 20px;
 }
+.sport-btn {
+background: transparent; border: 1px solid transparent; font-size: 15px; width: 30px; height: 30px;
+border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+transition: 0.2s; filter: grayscale(100%) opacity(0.5);
+}
+.sport-btn.active {
+filter: none; transform: scale(1.05);
+}
+
 #date-picker {
 background: var(--surface2); color: var(--text); border: 2px solid var(--border);
 padding: 8px 12px; border-radius: 20px; font-family: inherit; font-size: 14px;
@@ -59,7 +71,7 @@ flex-shrink: 0;
 }
 #date-picker:hover { border-color: var(--text2); }
 #date-picker:focus {
-border-color: var(--accent-calcio); box-shadow: 0 0 0 2px rgba(34,197,94,0.3);
+border-color: var(--text2); box-shadow: 0 0 0 2px rgba(255,255,255,0.1);
 cursor: text;
 }
 #date-picker::-webkit-calendar-picker-indicator {
@@ -292,7 +304,14 @@ z-index: 30; letter-spacing: 0.3px;
 <div id="header">
 <div class="header-left">
 <button id="btn-home">⬅ HOME</button>
-<div id="sport-title">CALCIO</div>
+
+<div id="sport-selector">
+<button class="sport-btn active" data-sport="0" title="Calcio">⚽</button>
+<button class="sport-btn" data-sport="1" title="Basket">🏀</button>
+<button class="sport-btn" data-sport="2" title="Tennis">🎾</button>
+<button class="sport-btn" data-sport="3" title="Volley Femminile">🏐</button>
+</div>
+
 </div>
 <input type="date" id="date-picker">
 <div class="header-right"></div>
@@ -389,10 +408,14 @@ leagues: [{ slug: "nba", url: "https://site.api.espn.com/apis/site/v2/sports/bas
 "TENNIS": {
 color: "var(--accent-tennis)",
 leagues: [{ slug: "atp", url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard" }]
+},
+"VOLLEY": {
+color: "var(--accent-volley)",
+leagues: [{ slug: "ncaa.w.volley", url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens-college-volleyball/scoreboard" }]
 }
 };
 
-const sportsList = ["CALCIO","BASKET","TENNIS"];
+const sportsList = ["CALCIO","BASKET","TENNIS","VOLLEY"];
 let currentSportIndex = 0;
 let inDetailView = false;
 let currentMatches = [];
@@ -403,14 +426,51 @@ const matchesListEl = document.getElementById('matches-list');
 const matchDetailEl = document.getElementById('match-detail');
 const detailSlider = document.getElementById('detail-slider');
 const btnHome = document.getElementById('btn-home');
-const sportTitleEl = document.getElementById('sport-title');
 const classificaTable = document.getElementById('classifica-table');
 const classificaTitleEl = document.getElementById('classifica-title');
 const partiteList = document.getElementById('partite-list');
 const partiteTitle = document.getElementById('partite-title');
-const positionIT = { "GK":"POR", "DF":"DIF", "MF":"CEN", "FW":"ATT" };
 
-// --- NUOVA LOGICA DEI BOTTONI ---
+// --- LOGICA BOTTONI CAMBIO SPORT ---
+const sportBtns = document.querySelectorAll('.sport-btn');
+sportBtns.forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    const targetBtn = e.target.closest('.sport-btn');
+    if(!targetBtn) return;
+    currentSportIndex = parseInt(targetBtn.dataset.sport);
+    const sportName = sportsList[currentSportIndex];
+    const config = sportConfigs[sportName];
+    
+    // Aggiorna lo stile dei bottoni
+    sportBtns.forEach((b, idx) => {
+      if (idx === currentSportIndex) {
+        b.classList.add('active');
+        b.style.background = `rgba(255,255,255,0.15)`;
+        b.style.borderColor = config.color;
+      } else {
+        b.classList.remove('active');
+        b.style.background = 'transparent';
+        b.style.borderColor = 'transparent';
+      }
+    });
+
+    // Se si era nei dettagli, torna alla home prima di ricaricare
+    if (inDetailView) {
+      inDetailView = false; 
+      matchDetailEl.classList.remove('active'); 
+      btnHome.classList.remove('active');
+      matchesListEl.style.display = 'flex';
+      document.getElementById('sport-selector').style.display = 'flex';
+    }
+    loadDataAndRender();
+  });
+});
+
+// Imposta lo stile iniziale del bottone attivo (Calcio)
+sportBtns[0].style.background = `rgba(255,255,255,0.15)`;
+sportBtns[0].style.borderColor = sportConfigs["CALCIO"].color;
+
+// --- NUOVA LOGICA DEI BOTTONI DETTAGLI ---
 const tabButtons = document.querySelectorAll('.tab-btn');
 
 tabButtons.forEach(btn => {
@@ -430,7 +490,13 @@ return text.replace(/\bGoal\b/gi,'Gol').replace(/\bYellow card\b/gi,'Cartellino 
 }
 
 datePicker.addEventListener('change', ()=>loadDataAndRender());
-btnHome.addEventListener('click', ()=>loadDataAndRender());
+btnHome.addEventListener('click', () => {
+    inDetailView = false; 
+    matchDetailEl.classList.remove('active'); 
+    btnHome.classList.remove('active');
+    matchesListEl.style.display = 'flex';
+    document.getElementById('sport-selector').style.display = 'flex'; // Riabilita selettore
+});
 
 function goToPanel(panel) {
   currentPanel = panel;
@@ -482,7 +548,8 @@ home: home?.team?.shortDisplayName || home?.team?.name || '???',
 away: away?.team?.shortDisplayName || away?.team?.name || '???',
 homeLogo, awayLogo,
 scoreH: home?.score??'0', scoreA: away?.score??'0',
-status: event.status.type.shortDetail || '', state: event.status.type.state,
+status: event.status.type.shortDetail || '', 
+state: event.status.type.state,
 isLive: event.status.type.state==='in',
 time: new Date(event.date).toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'}),
 summaryUrl: url.replace('/scoreboard','/summary?event='+event.id)
@@ -519,9 +586,21 @@ function createMatchCard(match, configColor) {
 const card = document.createElement('div');
 card.className = 'match-card'; card.dataset.id = match.id;
 card.style.borderLeftColor = configColor;
-let statusClass = match.isLive ? 'live' : (match.state === 'pre' ? 'upcoming' : 'finished');
+
 const dot = match.isLive ? '<span class="status-dot live"></span>' : '';
-const timeDisplay = match.state === 'pre' ? '🕐 '+match.time : (match.isLive ? dot+' LIVE' : '⏱️ '+match.time);
+
+// --- INSERIMENTO MINUTAGGIO / STATUS REALE ---
+let timeDisplay;
+if (match.state === 'pre') {
+    timeDisplay = '🕐 ' + match.time;
+} else if (match.isLive) {
+    // Es. 74', HT, Q3 4:12 (Fornito direttamente dall'API)
+    timeDisplay = dot + ' <span style="color: var(--live-red);">' + match.status + '</span>';
+} else {
+    // Es. FT, Final
+    timeDisplay = '⏱️ ' + match.status; 
+}
+
 card.innerHTML = `
 <span class="league-tag">🏆 ${match.league}</span>
 <div class="match-row">
@@ -580,12 +659,13 @@ return section;
 }
 
 async function loadDataAndRender() {
-inDetailView=false; matchDetailEl.classList.remove('active'); btnHome.classList.remove('active');
-matchesListEl.style.display='flex';
 const sportName = sportsList[currentSportIndex];
 const config = sportConfigs[sportName];
 const espnDate = datePicker.value.replace(/-/g,'');
-sportTitleEl.textContent = sportName; sportTitleEl.style.color = config.color;
+
+// Forza il colore del bottone HOME basato sullo sport per coerenza
+btnHome.style.color = config.color;
+
 matchesListEl.innerHTML = '<div class="loading-text">📡 Aggiornamento dati mondiali...</div>';
 
 currentMatches = await fetchRealData(sportName, espnDate);
@@ -625,7 +705,6 @@ const match = currentMatches.find(m => m.id === matchId);
 if (match) openDetail(match);
 });
 
-// ─── GENERATORE DI FORMAZIONI (CASA A SINISTRA, TRASFERTA A DESTRA) ───
 function generateMockLineups(match) {
 const positions = [
 { pos: 'POR', count: 1, names: ['Portiere Pilota'] },
@@ -702,7 +781,6 @@ html += `<div class="event"><span class="ev-icon">${e.icon}</span><span class="e
 return html;
 }
 
-// ─── CARICAMENTO DELLA CLASSIFICA REALE O SINTETICA ───
 async function loadClassificaOrBracket(leagueSlug, leagueName) {
 classificaTitleEl.textContent = `📊 Classifica Campionato: ${leagueName}`;
 classificaTable.innerHTML = '<tr><td colspan="9" class="loading-text">📡 Recupero classifica globale...</td></tr>';
@@ -735,7 +813,6 @@ return;
 }
 } catch (e) {}
 
-// Fallback Classifica Mock se l'API non è disponibile per quella lega
 let mockTeams = ['Inter', 'Milan', 'Juventus', 'Napoli', 'Atalanta', 'Roma', 'Lazio', 'Fiorentina'];
 if (!mockTeams.includes(currentDetailMatch.home)) mockTeams[4] = currentDetailMatch.home;
 if (!mockTeams.includes(currentDetailMatch.away)) mockTeams[5] = currentDetailMatch.away;
@@ -755,12 +832,10 @@ html += `<tr ${rowStyle}>
 classificaTable.innerHTML = html;
 }
 
-// ─── CARICAMENTO PARTITE PRECEDENTI DEL CAMPIONATO ───
 function loadRecentMatches(leagueSlug) {
 partiteTitle.textContent = `📅 Calendario e Turni Recenti - ${currentDetailMatch.league}`;
 partiteList.innerHTML = '';
 
-// Filtra i match del giorno appartenenti alla stessa lega
 let crossMatches = currentMatches.filter(m => m.leagueSlug === leagueSlug && m.id !== currentDetailMatch.id);
 
 if (crossMatches.length > 0) {
@@ -775,7 +850,6 @@ c.innerHTML = `
 partiteList.appendChild(c);
 });
 } else {
-// Storico fittizio e coerente per le due squadre selezionate
 const h = currentDetailMatch.home;
 const a = currentDetailMatch.away;
 const history = [
@@ -800,13 +874,13 @@ partiteList.appendChild(c);
 }
 }
 
-// ─── APERTURA INTERFACCIA DETTAGLI PARTITA ───
 async function openDetail(match) {
 currentDetailMatch = match;
 inDetailView = true;
 currentPanel = 'formazioni';
 detailSlider.classList.remove('show-classifica','show-partite');
 matchesListEl.style.display = 'none';
+document.getElementById('sport-selector').style.display = 'none'; // Nasconde i pallini sport nei dettagli
 matchDetailEl.classList.add('active');
 btnHome.classList.add('active');
 
@@ -867,7 +941,6 @@ eventsHTML = generateMockEvents(match);
 }
 timelineEl.innerHTML = eventsHTML;
 
-// Inietta le formazioni nel contenitore a due colonne (Destra e Sinistra)
 lineupsContainer.innerHTML = generateMockLineups(match);
 goToPanel('formazioni');
 
@@ -879,7 +952,10 @@ goToPanel('formazioni');
 }
 
 window.addEventListener('keydown', (e) => {
-if (e.key==='Backspace' && inDetailView) { e.preventDefault(); loadDataAndRender(); }
+if (e.key==='Backspace' && inDetailView) { 
+    e.preventDefault(); 
+    btnHome.click(); 
+}
 });
 
 loadDataAndRender();
