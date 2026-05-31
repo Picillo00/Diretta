@@ -541,7 +541,6 @@ if (!response.ok) return [];
 const data = await response.json();
 if (data.events) {
 return data.events.map(event => {
-if (!comp || !comp.competitors || comp.competitors.length < 2) continue; // salta se non ci sono abbastanza giocatori
 const home = comp.competitors[0];
 const away = comp.competitors[1];
 const comp = event.competitions[0];
