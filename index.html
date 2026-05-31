@@ -410,8 +410,17 @@ color: "var(--accent-tennis)",
 leagues: [{ slug: "atp", url: "https://site.api.espn.com/apis/site/v2/sports/tennis/atp/scoreboard" }]
 },
 "VOLLEY": {
-color: "var(--accent-volley)",
-leagues: [{ slug: "volleyball.women.international", url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/women-international/scoreboard" }]
+    color: "var(--accent-volley)",
+    leagues: [
+        { 
+            slug: "volleyball.womens.nations.league", 
+            url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens.nations.league/scoreboard" 
+        },
+        { 
+            slug: "volleyball.womens.world.championship", 
+            url: "https://site.api.espn.com/apis/site/v2/sports/volleyball/womens.world.championship/scoreboard" 
+        }
+    ]
 }
 };
 
